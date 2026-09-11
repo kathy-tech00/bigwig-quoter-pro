@@ -151,6 +151,10 @@
 
   body {
     background-color: var(--color-background);
+    background-image:
+      radial-gradient(circle at 8% 0%, oklch(0.93 0.045 250 / 0.7), transparent 30rem),
+      radial-gradient(circle at 92% 10%, oklch(0.95 0.04 75 / 0.28), transparent 24rem);
+    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
     letter-spacing: 0;
@@ -283,6 +287,82 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  .app-shell {
+    isolation: isolate;
+  }
+
+  .sidebar-shell {
+    box-shadow: 8px 0 30px oklch(0.22 0.06 258 / 0.05);
+  }
+
+  .sidebar-shell::after {
+    position: absolute;
+    inset: auto -4rem -5rem auto;
+    width: 10rem;
+    height: 10rem;
+    border-radius: 999px;
+    background: oklch(0.8 0.13 250 / 0.12);
+    filter: blur(2rem);
+    content: "";
+    pointer-events: none;
+  }
+
+  .topbar {
+    box-shadow: 0 1px 0 oklch(1 0 0 / 0.65), 0 8px 24px oklch(0.22 0.06 258 / 0.04);
+  }
+
+  .surface-card {
+    border: 1px solid oklch(0.88 0.025 250 / 0.8);
+  }
+
+  .performance-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .performance-card::after {
+    position: absolute;
+    right: -3rem;
+    top: -4rem;
+    z-index: -1;
+    width: 12rem;
+    height: 12rem;
+    border: 1px solid oklch(1 0 0 / 0.15);
+    border-radius: 999px;
+    box-shadow: 0 0 0 2rem oklch(1 0 0 / 0.04), 0 0 0 4rem oklch(1 0 0 / 0.025);
+    content: "";
+  }
+
+  .table-row-interactive {
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .table-row-interactive:hover {
+    background-color: var(--color-accent);
+    box-shadow: inset 3px 0 0 var(--color-primary);
+  }
+
+  .status-pill-dot {
+    box-shadow: 0 0 0 3px currentColor;
+    opacity: 0.16;
+  }
+
+  .notice-toast {
+    animation: toast-in 0.35s ease-out both;
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -0.75rem);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
   /* Glow effects */
   .glow-primary {
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
@@ -355,6 +435,17 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: var(--muted-foreground);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
