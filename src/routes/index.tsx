@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { getSavedQuotations, saveDraft, updateDraft, getDrafts, saveQuotation, convertDraftToQuotation } from "@/services/quotation-service";
+import { getSavedQuotations, saveDraft, updateDraft, saveQuotation, updateQuotation, type StoredQuotation } from "@/services/quotation-service";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -36,6 +36,7 @@ const services = ["Architectural drawing & approvals", "Site clearing and settin
 function getStoredQuotationsForDisplay() {
   const quotations = getSavedQuotations();
   return quotations.map(q => ({
+    id: q.id,
     number: q.quotationNumber,
     client: q.client.name,
     project: q.title,
@@ -107,11 +108,23 @@ function QuotationApp() {
   const [depositPct, setDepositPct] = useState(40);
   const [exchangeRate, setExchangeRate] = useState(1600);
   const [items, setItems] = useState<Item[]>([]);
+  const [savedQuotations, setSavedQuotations] = useState<StoredQuotation[]>([]);
   const documentRef = useRef<HTMLDivElement>(null);
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.quantity * item.rate, 0), [items]);
   const total = Math.max(0, subtotal - discount);
   const deposit = total * (depositPct / 100);
   const converted = currency === "NGN" ? total / exchangeRate : total * exchangeRate;
+
+  const refreshSavedQuotations = () => setSavedQuotations(getSavedQuotations());
+
+  useEffect(() => {
+    refreshSavedQuotations();
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "babc_quotations") refreshSavedQuotations();
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   useEffect(() => { if (!notice) return; const timer = window.setTimeout(() => setNotice(""), 2600); return () => window.clearTimeout(timer); }, [notice]);
 
@@ -136,6 +149,9 @@ function QuotationApp() {
       
       if (currentQuotationId?.startsWith("draft_")) {
         updateDraft(currentQuotationId, draftData);
+      } else if (currentQuotationId) {
+        updateQuotation(currentQuotationId, { ...draftData, status: "sent" });
+        refreshSavedQuotations();
       } else {
         const saved = saveDraft(draftData);
         setCurrentQuotationId(saved.id);
@@ -153,7 +169,9 @@ function QuotationApp() {
     }
 
     const quotationData = {
-      quotationNumber: `BABC-Q-${String(getSavedQuotations().length + 1).padStart(4, "0")}`,
+      quotationNumber: currentQuotationId
+        ? getSavedQuotations().find((quotation) => quotation.id === currentQuotationId)?.quotationNumber ?? `BABC-Q-${String(savedQuotations.length + 1).padStart(4, "0")}`
+        : `BABC-Q-${String(savedQuotations.length + 1).padStart(4, "0")}`,
       title,
       client,
       items,
@@ -166,9 +184,15 @@ function QuotationApp() {
       status: "sent" as const,
     };
 
-    const saved = saveQuotation(quotationData);
+    const saved = currentQuotationId && !currentQuotationId.startsWith("draft_")
+      ? updateQuotation(currentQuotationId, quotationData)
+      : saveQuotation(quotationData);
+    if (!saved) {
+      notify("Unable to save quotation. Please try again.");
+      return;
+    }
     console.log("✓ Quotation saved:", saved);
-    console.log("✓ Total saved quotations:", getSavedQuotations().length);
+    refreshSavedQuotations();
     setCurrentQuotationId(saved.id);
     setPreviewOpen(false); // Close preview if open
     setEditorOpen(false); // Close editor after saving
@@ -181,9 +205,23 @@ function QuotationApp() {
     setTitle("");
     setClient({ name: "", company: "", phone: "", address: "" });
     setItems([]);
+    setCurrency("NGN");
     setDiscount(0);
     setEditorOpen(true);
     notify("New quotation created");
+  };
+  const editQuotation = (quotation: StoredQuotation) => {
+    setCurrentQuotationId(quotation.id);
+    setTitle(quotation.title);
+    setClient(quotation.client);
+    setItems(quotation.items);
+    setCurrency(quotation.currency);
+    setDiscount(quotation.discount);
+    setDepositPct(quotation.depositPct);
+    setExchangeRate(quotation.exchangeRate);
+    setEditorOpen(true);
+    setPreviewOpen(false);
+    notify(`Editing ${quotation.quotationNumber}`);
   };
   const updateItem = (id: number, key: keyof Item, value: string | number) => setItems((current) => current.map((item) => item.id === id ? { ...item, [key]: value } : item));
   const addItem = () => setItems((current) => [...current, { id: Date.now(), description: services[4] ?? "New construction item", unit: "lump sum", quantity: 1, rate: 0 }]);
@@ -210,8 +248,8 @@ function QuotationApp() {
         <div className="flex items-center gap-2"><Button variant="ghost" size="icon" className="transition-smooth hover:bg-accent" aria-label="Notifications"><Bell /></Button><Button variant="gold" onClick={newQuotation} className="transition-smooth glow-primary-hover shadow-md"><Plus /> New quotation</Button></div>
       </header>
 
-      {view === "dashboard" && <Dashboard onCreate={() => setEditorOpen(true)} onView={() => setView("quotes")} />}
-      {view === "quotes" && <Quotations onCreate={() => setEditorOpen(true)} onPreview={() => setPreviewOpen(true)} />}
+      {view === "dashboard" && <Dashboard quotations={savedQuotations} onCreate={newQuotation} onView={() => setView("quotes")} onEdit={editQuotation} />}
+      {view === "quotes" && <Quotations quotations={savedQuotations} onCreate={newQuotation} onEdit={editQuotation} />}
       {view === "invoices" && <EmptyView icon={ReceiptText} title="Invoices" text="Accepted quotations become trackable invoices here." action="Create from quotation" onAction={() => setView("quotes")} />}
       {view === "payments" && <EmptyView icon={CircleDollarSign} title="Payment tracking" text="Record deposits and balances in Naira or US Dollars." action="View invoices" onAction={() => setView("invoices")} />}
       {view === "clients" && <Clients />}
@@ -219,7 +257,7 @@ function QuotationApp() {
     </main>
 
     {editorOpen && <div className="fixed inset-0 z-50 bg-foreground/35 backdrop-blur-sm"><div className="absolute inset-y-0 right-0 flex w-full max-w-4xl flex-col bg-background shadow-2xl">
-      <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-8"><div><p className="text-xs font-bold uppercase text-primary">BABC-Q-0029</p><h2 className="font-brand text-xl font-bold">New quotation</h2></div><Button variant="ghost" size="icon" onClick={() => setEditorOpen(false)} aria-label="Close editor"><X /></Button></div>
+      <div className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-8"><div><p className="text-xs font-bold uppercase text-primary">{currentQuotationId ? "Edit quotation" : "New quotation"}</p><h2 className="font-brand text-xl font-bold">{currentQuotationId ? "Edit quotation" : "New quotation"}</h2></div><Button variant="ghost" size="icon" onClick={() => setEditorOpen(false)} aria-label="Close editor"><X /></Button></div>
       <div className="flex-1 overflow-y-auto p-5 sm:p-8"><div className="grid gap-8 xl:grid-cols-[1fr_270px]">
         <div className="space-y-8"><section><SectionTitle number="01" title="Client & project" /><div className="grid gap-4 sm:grid-cols-2"><Field label="Client name" value={client.name} onChange={(v) => setClient({...client,name:v})}/><Field label="Company name" value={client.company} onChange={(v) => setClient({...client,company:v})}/><Field label="Phone number" value={client.phone} onChange={(v) => setClient({...client,phone:v})}/><Field label="Project address" value={client.address} onChange={(v) => setClient({...client,address:v})}/><div className="sm:col-span-2"><Field label="Quotation title" value={title} onChange={setTitle}/></div></div></section>
         <section><div className="flex items-center justify-between"><SectionTitle number="02" title="Scope & pricing" /><Button variant="outline" size="sm" onClick={addItem}><Plus /> Add item</Button></div><div className="mt-4 space-y-3">{items.map((item, i) => <div key={item.id} className="grid gap-2 border-b border-border pb-4 sm:grid-cols-[28px_1fr_80px_120px_36px]"><span className="pt-2 text-xs font-bold text-muted-foreground">{String(i+1).padStart(2,"0")}</span><Input value={item.description} onChange={(e) => updateItem(item.id,"description",e.target.value)} aria-label={`Item ${i+1} description`} /><Input type="number" min="0.001" step="0.001" value={item.quantity} onChange={(e) => updateItem(item.id,"quantity",Number(e.target.value))} aria-label="Quantity" /><Input type="number" min="0" value={item.rate} onChange={(e) => updateItem(item.id,"rate",Number(e.target.value))} aria-label="Rate" /><Button variant="ghost" size="icon" onClick={() => setItems((list) => list.filter((x) => x.id !== item.id))} aria-label="Remove item"><Trash2 /></Button></div>)}</div></section>
@@ -233,8 +271,7 @@ function QuotationApp() {
   </div>;
 }
 
-function Dashboard({ onCreate, onView }: { onCreate: () => void; onView: () => void }) {
-  const quotations = getSavedQuotations();
+function Dashboard({ quotations, onCreate, onView, onEdit }: { quotations: StoredQuotation[]; onCreate: () => void; onView: () => void; onEdit: (quotation: StoredQuotation) => void }) {
   const totalValue = quotations.reduce((sum, q) => sum + q.total, 0);
   const acceptedAmount = quotations.filter(q => q.status === "accepted").reduce((sum, q) => sum + q.total, 0);
   const acceptedCount = quotations.filter(q => q.status === "accepted").length;
@@ -249,12 +286,12 @@ function Dashboard({ onCreate, onView }: { onCreate: () => void; onView: () => v
   ] as const;
   return <div className="mx-auto max-w-7xl p-4 sm:p-8"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div className="animate-slide-up"><p className="text-xs font-bold uppercase text-highlight">{getCurrentDate()}</p><h1 className="mt-2 font-brand text-3xl font-bold sm:text-4xl">{getTimeGreeting()}, Hillary.</h1><p className="mt-2 text-sm text-muted-foreground">Your business at a glance.</p></div><Button onClick={onCreate} className="transition-smooth glow-primary-hover"><Plus /> Create quotation</Button></div>
   <div className="mt-8 stats-grid grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 xl:grid-cols-4 shadow-lg">{stats.map(([label,value,meta,Icon], idx) => <div key={label} className="surface-card bg-card p-5 transition-smooth hover:shadow-lg hover:translate-y-[-2px] animate-fade-in" style={{animationDelay: `${idx * 100}ms`}}><div className="flex items-center justify-between"><p className="text-xs font-semibold text-muted-foreground">{label}</p><Icon className="size-4 text-primary" /></div><p className="mt-5 text-2xl font-bold">{value}</p><p className="mt-1 text-xs font-semibold text-success">{meta}</p></div>)}</div>
-  <div className="mt-8 grid min-w-0 gap-6 xl:grid-cols-[1.55fr_1fr]"><section className="surface-card min-w-0 bg-card rounded-lg shadow-lg overflow-hidden"><div className="flex items-center justify-between border-b border-border p-5"><div><h2 className="font-brand font-bold">Recent quotations</h2><p className="mt-1 text-xs text-muted-foreground">Latest client activity</p></div><Button variant="ghost" size="sm" onClick={onView} className="transition-smooth hover:translate-x-1">View all <ChevronRight /></Button></div><QuoteTable /></section><section className="performance-card min-w-0 bg-gradient-to-br from-primary to-primary/90 p-6 text-primary-foreground rounded-lg shadow-lg"><p className="text-xs font-bold uppercase text-highlight">September performance</p><h2 className="mt-3 font-brand text-2xl font-bold">61.6% acceptance rate</h2><div className="mt-8 flex h-36 items-end gap-3">{[32,55,43,78,62,91,70].map((v,i)=><div key={i} className="flex h-full flex-1 items-end bg-primary-foreground/10 rounded-t hover:bg-primary-foreground/20 transition-smooth"><div className="w-full bg-highlight rounded-t" style={{height:`${v}%`}} /></div>)}</div><div className="mt-4 flex justify-between text-[10px] opacity-70"><span>Week 1</span><span>Week 4</span></div><div className="mt-7 border-t border-primary-foreground/20 pt-5"><p className="text-xs opacity-70">Next expiring quotation</p><p className="mt-1 text-sm font-semibold">BABC-Q-0027 · in 4 days</p></div></section></div></div>;
+  <div className="mt-8 grid min-w-0 gap-6 xl:grid-cols-[1.55fr_1fr]"><section className="surface-card min-w-0 bg-card rounded-lg shadow-lg overflow-hidden"><div className="flex items-center justify-between border-b border-border p-5"><div><h2 className="font-brand font-bold">Recent quotations</h2><p className="mt-1 text-xs text-muted-foreground">Latest client activity</p></div><Button variant="ghost" size="sm" onClick={onView} className="transition-smooth hover:translate-x-1">View all <ChevronRight /></Button></div><QuoteTable quotations={quotations} onEdit={onEdit} /></section><section className="performance-card min-w-0 bg-gradient-to-br from-primary to-primary/90 p-6 text-primary-foreground rounded-lg shadow-lg"><p className="text-xs font-bold uppercase text-highlight">September performance</p><h2 className="mt-3 font-brand text-2xl font-bold">61.6% acceptance rate</h2><div className="mt-8 flex h-36 items-end gap-3">{[32,55,43,78,62,91,70].map((v,i)=><div key={i} className="flex h-full flex-1 items-end bg-primary-foreground/10 rounded-t hover:bg-primary-foreground/20 transition-smooth"><div className="w-full bg-highlight rounded-t" style={{height:`${v}%`}} /></div>)}</div><div className="mt-4 flex justify-between text-[10px] opacity-70"><span>Week 1</span><span>Week 4</span></div><div className="mt-7 border-t border-primary-foreground/20 pt-5"><p className="text-xs opacity-70">Next expiring quotation</p><p className="mt-1 text-sm font-semibold">BABC-Q-0027 · in 4 days</p></div></section></div></div>;
 }
 
-function QuoteTable() { const quotes = getStoredQuotationsForDisplay(); return <div className="overflow-x-auto"><table className="w-full min-w-[650px] text-left"><thead><tr className="text-[10px] uppercase text-muted-foreground">{["Number / Client","Project","Amount","Status","Date",""].map(x=><th key={x} className="px-5 py-3 font-bold">{x}</th>)}</tr></thead><tbody>{quotes.map(q=><tr key={q.number} className="table-row-interactive border-t border-border text-sm"><td className="px-5 py-4"><p className="font-bold">{q.number}</p><p className="text-xs text-muted-foreground">{q.client}</p></td><td className="px-5 py-4 text-xs">{q.project}</td><td className="px-5 py-4 font-bold">{money(q.amount)}</td><td className="px-5 py-4"><StatusPill status={q.status}/></td><td className="px-5 py-4 text-xs text-muted-foreground">{q.date}</td><td className="px-5 py-4"><Button variant="ghost" size="icon" aria-label="More options"><MoreHorizontal /></Button></td></tr>)}</tbody></table></div> }
+function QuoteTable({ quotations, onEdit }: { quotations: StoredQuotation[]; onEdit: (quotation: StoredQuotation) => void }) { return <div className="overflow-x-auto"><table className="w-full min-w-[650px] text-left"><thead><tr className="text-[10px] uppercase text-muted-foreground">{["Number / Client","Project","Amount","Status","Date",""].map(x=><th key={x} className="px-5 py-3 font-bold">{x}</th>)}</tr></thead><tbody>{quotations.map(q=><tr key={q.id} className="table-row-interactive border-t border-border text-sm"><td className="px-5 py-4"><p className="font-bold">{q.quotationNumber}</p><p className="text-xs text-muted-foreground">{q.client.name}</p></td><td className="px-5 py-4 text-xs">{q.title}</td><td className="px-5 py-4 font-bold">{money(q.total, q.currency)}</td><td className="px-5 py-4"><StatusPill status={q.status.charAt(0).toUpperCase() + q.status.slice(1)}/></td><td className="px-5 py-4 text-xs text-muted-foreground">{new Date(q.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</td><td className="px-5 py-4"><Button variant="ghost" size="icon" onClick={() => onEdit(q)} aria-label={`Edit ${q.quotationNumber}`}><Settings /></Button></td></tr>)}</tbody></table></div> }
 
-function Quotations({onCreate,onPreview}:{onCreate:()=>void;onPreview:()=>void}) { return <div className="mx-auto max-w-7xl p-4 sm:p-8"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase text-highlight">Documents</p><h1 className="mt-2 font-brand text-3xl font-bold">Quotations</h1></div><Button onClick={onCreate}><Plus /> New quotation</Button></div><div className="mt-8 flex gap-3"><div className="relative max-w-md flex-1"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/><Input className="pl-9" placeholder="Search quotation, client or project" /></div></div><div className="mt-5 bg-card" onClick={onPreview}><QuoteTable /></div></div> }
+function Quotations({ quotations, onCreate, onEdit }: { quotations: StoredQuotation[]; onCreate: () => void; onEdit: (quotation: StoredQuotation) => void }) { return <div className="mx-auto max-w-7xl p-4 sm:p-8"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase text-highlight">Documents</p><h1 className="mt-2 font-brand text-3xl font-bold">Quotations</h1></div><Button onClick={onCreate}><Plus /> New quotation</Button></div><div className="mt-8 flex gap-3"><div className="relative max-w-md flex-1"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/><Input className="pl-9" placeholder="Search quotation, client or project" /></div></div><div className="mt-5 bg-card"><QuoteTable quotations={quotations} onEdit={onEdit} /></div></div> }
 
 function Clients() { const quotes = getStoredQuotationsForDisplay(); return <div className="mx-auto max-w-7xl p-4 sm:p-8"><p className="text-xs font-bold uppercase text-highlight animate-fade-in">Relationships</p><h1 className="mt-2 font-brand text-3xl font-bold">Clients</h1><div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{quotes.slice(0,3).map((q,i)=><div className="border border-border bg-card p-5 rounded-lg shadow-md transition-smooth hover:shadow-xl hover:translate-y-[-4px] animate-scale-in" key={q.client} style={{animationDelay: `${i * 150}ms`}}><div className="flex items-start justify-between"><div className="grid size-11 place-items-center bg-gradient-to-br from-primary to-primary/80 font-brand font-bold text-primary-foreground rounded-lg">{q.client.charAt(0)}</div><StatusPill status={i===0?"Active":"Lead"}/></div><h2 className="mt-5 font-bold">{q.client}</h2><p className="mt-1 text-xs text-muted-foreground">{q.project}</p><div className="mt-5 flex items-center justify-between border-t border-border pt-4"><span className="text-xs text-muted-foreground">Lifetime value</span><strong className="text-sm">{money(q.amount)}</strong></div></div>)}</div></div> }
 
