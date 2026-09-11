@@ -68,7 +68,7 @@ Use these project settings:
 - Build command: `npm run build`
 - Output directory: leave blank / use Vercel's default for the TanStack Start preset
 
-Copy `.env.example` to `.env` for local development. In Vercel, add the same
-Supabase variables from `.env.example` as project environment variables for
-the environments where the application runs. Do not commit `.env` or any
-secret key.
+No environment variables are required for the current quotation app: quotations
+are stored in the browser. The Supabase variables listed in `.env.example` are
+optional and should only be configured if Supabase-backed authentication or
+server functions are enabled later. Do not commit `.env` or any secret key.
