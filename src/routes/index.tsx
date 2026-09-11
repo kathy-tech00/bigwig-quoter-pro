@@ -43,14 +43,16 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-3">
       {/* Premium BW Logo with floating effect */}
-      <div className="relative animate-float">
+      <div className="relative animate-float shrink-0">
         {/* Logo background glow */}
-        <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/30 to-accent/20 blur-lg" />
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-400/30 to-blue-600/20 blur-lg" />
         
-        {/* Main logo */}
-        <div className="relative grid size-11 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-primary/80 font-brand text-lg font-bold text-primary-foreground shadow-lg glow-primary">
-          BW
-        </div>
+        {/* Logo image */}
+        <img 
+          src="/logo.svg" 
+          alt="B.A.B.C Logo" 
+          className="relative size-11 rounded-lg shadow-lg glow-primary"
+        />
       </div>
       
       {!compact && (
