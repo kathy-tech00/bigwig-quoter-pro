@@ -43,15 +43,7 @@ Typography:Modern / Bold / Elegant / Tech
 Theme:Dark / Light / Both
 Most important: Beautiful UI, Fast receipt creation, WhatsApp sharing, Printing.
 
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/8887ea20-01aa-4011-b837-43ab7086b88d).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+This is a professional quotation management application built with React, TypeScript, and TanStack Router.
 
 ## Development
 

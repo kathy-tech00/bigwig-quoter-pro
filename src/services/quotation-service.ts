@@ -67,6 +67,10 @@ export function saveQuotation(quotation: Omit<StoredQuotation, "id" | "createdAt
   quotations.push(newQuotation);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(quotations));
   
+  // Verify save was successful
+  const saved = localStorage.getItem(STORAGE_KEY);
+  console.log("📦 Storage save check:", saved ? `${JSON.parse(saved).length} items in storage` : "ERROR: Storage empty");
+  
   return newQuotation;
 }
 
