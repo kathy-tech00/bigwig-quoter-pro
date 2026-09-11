@@ -53,10 +53,12 @@ export function getSavedQuotations(): StoredQuotation[] {
 /**
  * Save a new quotation
  */
-export function saveQuotation(quotation: Omit<StoredQuotation, "id" | "createdAt" | "updatedAt">): StoredQuotation {
+export function saveQuotation(
+  quotation: Omit<StoredQuotation, "id" | "createdAt" | "updatedAt">,
+): StoredQuotation {
   const quotations = getSavedQuotations();
   const now = new Date().toISOString();
-  
+
   const newQuotation: StoredQuotation = {
     ...quotation,
     id: crypto.randomUUID(),
@@ -66,20 +68,26 @@ export function saveQuotation(quotation: Omit<StoredQuotation, "id" | "createdAt
 
   quotations.push(newQuotation);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(quotations));
-  
+
   // Verify save was successful
   const saved = localStorage.getItem(STORAGE_KEY);
-  console.log("📦 Storage save check:", saved ? `${JSON.parse(saved).length} items in storage` : "ERROR: Storage empty");
-  
+  console.log(
+    "📦 Storage save check:",
+    saved ? `${JSON.parse(saved).length} items in storage` : "ERROR: Storage empty",
+  );
+
   return newQuotation;
 }
 
 /**
  * Update an existing quotation
  */
-export function updateQuotation(id: string, updates: Partial<StoredQuotation>): StoredQuotation | null {
+export function updateQuotation(
+  id: string,
+  updates: Partial<StoredQuotation>,
+): StoredQuotation | null {
   const quotations = getSavedQuotations();
-  const index = quotations.findIndex(q => q.id === id);
+  const index = quotations.findIndex((q) => q.id === id);
 
   if (index === -1) return null;
   const existing = quotations[index];
@@ -93,7 +101,7 @@ export function updateQuotation(id: string, updates: Partial<StoredQuotation>): 
 
   quotations[index] = updated;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(quotations));
-  
+
   return updated;
 }
 
@@ -102,7 +110,7 @@ export function updateQuotation(id: string, updates: Partial<StoredQuotation>): 
  */
 export function getQuotation(id: string): StoredQuotation | null {
   const quotations = getSavedQuotations();
-  return quotations.find(q => q.id === id) || null;
+  return quotations.find((q) => q.id === id) || null;
 }
 
 /**
@@ -110,7 +118,7 @@ export function getQuotation(id: string): StoredQuotation | null {
  */
 export function deleteQuotation(id: string): boolean {
   const quotations = getSavedQuotations();
-  const filtered = quotations.filter(q => q.id !== id);
+  const filtered = quotations.filter((q) => q.id !== id);
 
   if (filtered.length === quotations.length) return false;
 
@@ -121,10 +129,12 @@ export function deleteQuotation(id: string): boolean {
 /**
  * Save a draft quotation (auto-save)
  */
-export function saveDraft(quotation: Omit<StoredQuotation, "id" | "createdAt" | "updatedAt">): StoredQuotation {
+export function saveDraft(
+  quotation: Omit<StoredQuotation, "id" | "createdAt" | "updatedAt">,
+): StoredQuotation {
   const drafts = getDrafts();
   const now = new Date().toISOString();
-  
+
   const draft: StoredQuotation = {
     ...quotation,
     id: "draft_" + crypto.randomUUID(),
@@ -135,7 +145,7 @@ export function saveDraft(quotation: Omit<StoredQuotation, "id" | "createdAt" | 
 
   drafts.push(draft);
   localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
-  
+
   return draft;
 }
 
@@ -144,7 +154,7 @@ export function saveDraft(quotation: Omit<StoredQuotation, "id" | "createdAt" | 
  */
 export function updateDraft(id: string, updates: Partial<StoredQuotation>): StoredQuotation | null {
   const drafts = getDrafts();
-  const index = drafts.findIndex(d => d.id === id);
+  const index = drafts.findIndex((d) => d.id === id);
 
   if (index === -1) return null;
   const existing = drafts[index];
@@ -158,7 +168,7 @@ export function updateDraft(id: string, updates: Partial<StoredQuotation>): Stor
 
   drafts[index] = updated;
   localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
-  
+
   return updated;
 }
 
@@ -180,7 +190,7 @@ export function getDrafts(): StoredQuotation[] {
  */
 export function convertDraftToQuotation(draftId: string): StoredQuotation | null {
   const drafts = getDrafts();
-  const draftIndex = drafts.findIndex(d => d.id === draftId);
+  const draftIndex = drafts.findIndex((d) => d.id === draftId);
 
   if (draftIndex === -1) return null;
 
@@ -203,7 +213,7 @@ export function convertDraftToQuotation(draftId: string): StoredQuotation | null
  */
 export function deleteDraft(id: string): boolean {
   const drafts = getDrafts();
-  const filtered = drafts.filter(d => d.id !== id);
+  const filtered = drafts.filter((d) => d.id !== id);
 
   if (filtered.length === drafts.length) return false;
 
@@ -221,9 +231,9 @@ export function getStatistics() {
   return {
     totalQuotations: quotations.length,
     totalDrafts: drafts.length,
-    sentQuotations: quotations.filter(q => q.status === "sent").length,
-    acceptedQuotations: quotations.filter(q => q.status === "accepted").length,
-    paidQuotations: quotations.filter(q => q.status === "paid").length,
+    sentQuotations: quotations.filter((q) => q.status === "sent").length,
+    acceptedQuotations: quotations.filter((q) => q.status === "accepted").length,
+    paidQuotations: quotations.filter((q) => q.status === "paid").length,
     totalValue: quotations.reduce((sum, q) => sum + q.total, 0),
   };
 }

@@ -3,7 +3,13 @@
  * Features: Elegant gradient, professional styling, floating animation
  */
 
-export function BrandLogo({ size = "md", className = "" }: { size?: "sm" | "md" | "lg"; className?: string }) {
+export function BrandLogo({
+  size = "md",
+  className = "",
+}: {
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}) {
   const sizeMap = {
     sm: { container: "size-10", text: "text-sm", padding: "p-1.5" },
     md: { container: "size-12", text: "text-base", padding: "p-2" },
@@ -27,14 +33,22 @@ export function BrandLogo({ size = "md", className = "" }: { size?: "sm" | "md" 
       <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/15 to-transparent" />
 
       {/* Text content */}
-      <div className={`relative font-black text-white tracking-tighter ${sizeConfig.text} ${className}`}>
+      <div
+        className={`relative font-black text-white tracking-tighter ${sizeConfig.text} ${className}`}
+      >
         BW
       </div>
     </div>
   );
 }
 
-export function BrandLogoWithText({ compact = false, className = "" }: { compact?: boolean; className?: string }) {
+export function BrandLogoWithText({
+  compact = false,
+  className = "",
+}: {
+  compact?: boolean;
+  className?: string;
+}) {
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       <div className="animate-float">
@@ -46,7 +60,9 @@ export function BrandLogoWithText({ compact = false, className = "" }: { compact
           <div className="flex items-baseline gap-1">
             <p className="font-black text-base text-foreground">B.A.B.C</p>
           </div>
-          <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">From Vision to Legacy</p>
+          <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+            From Vision to Legacy
+          </p>
         </div>
       )}
     </div>
@@ -57,15 +73,15 @@ export function BrandLogoWithText({ compact = false, className = "" }: { compact
  * SVG-based premium logo for print and high-res display
  * Can be customized with different colors and styles
  */
-export function BrandLogoSVG({ 
-  size = 128, 
+export function BrandLogoSVG({
+  size = 128,
   withText = true,
-}: { 
+}: {
   size?: number;
   withText?: boolean;
 }) {
   const viewHeight = withText ? 160 : 128;
-  
+
   return (
     <svg
       width={size}
@@ -100,7 +116,15 @@ export function BrandLogoSVG({
       </defs>
 
       {/* Main logo circle background */}
-      <rect x="16" y="8" width="96" height="96" rx="16" fill="url(#premiumGradient)" filter="url(#premiumGlow)" />
+      <rect
+        x="16"
+        y="8"
+        width="96"
+        height="96"
+        rx="16"
+        fill="url(#premiumGradient)"
+        filter="url(#premiumGlow)"
+      />
 
       {/* Top-left highlight for depth */}
       <rect x="16" y="8" width="48" height="48" rx="16" fill="white" opacity="0.18" />
@@ -109,19 +133,46 @@ export function BrandLogoSVG({
       <rect x="104" y="32" width="6" height="56" rx="3" fill="url(#goldAccent)" opacity="0.85" />
 
       {/* Premium text: BW */}
-      <text x="64" y="68" textAnchor="middle" fontSize="56" fontWeight="900" fontFamily="'Poppins', sans-serif" fill="white" letterSpacing="-2">
+      <text
+        x="64"
+        y="68"
+        textAnchor="middle"
+        fontSize="56"
+        fontWeight="900"
+        fontFamily="'Poppins', sans-serif"
+        fill="white"
+        letterSpacing="-2"
+      >
         BW
       </text>
 
       {withText && (
         <>
           {/* Subtitle: B.A.B.C */}
-          <text x="64" y="128" textAnchor="middle" fontSize="16" fontWeight="700" fontFamily="'Poppins', sans-serif" fill="#1F2937" letterSpacing="1.5">
+          <text
+            x="64"
+            y="128"
+            textAnchor="middle"
+            fontSize="16"
+            fontWeight="700"
+            fontFamily="'Poppins', sans-serif"
+            fill="#1F2937"
+            letterSpacing="1.5"
+          >
             B.A.B.C
           </text>
 
           {/* Tagline */}
-          <text x="64" y="148" textAnchor="middle" fontSize="10" fontWeight="600" fontFamily="'Inter', sans-serif" fill="#6B7280" letterSpacing="1">
+          <text
+            x="64"
+            y="148"
+            textAnchor="middle"
+            fontSize="10"
+            fontWeight="600"
+            fontFamily="'Inter', sans-serif"
+            fill="#6B7280"
+            letterSpacing="1"
+          >
             FROM VISION TO LEGACY
           </text>
         </>

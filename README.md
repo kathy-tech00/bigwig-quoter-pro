@@ -1,6 +1,6 @@
 # BigWig Quoter Pro
 
-As a high level US Web developer i want to build a professional Quotation web app for building construction company with the following information: 
+As a high level US Web developer i want to build a professional Quotation web app for building construction company with the following information:
 Company Name: B.A.B.C BIG-WIG ARCHITECTURE AND BUILDING CONSTRUCTION COMPANY.
 Company Logo: Attached Image.
 Company Tagline/Slogan: From Vision to legacy.

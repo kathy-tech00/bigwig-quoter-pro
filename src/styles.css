@@ -167,7 +167,8 @@
 
 /* Premium animations and effects */
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px);
   }
   50% {
@@ -176,7 +177,8 @@
 }
 
 @keyframes float-slow {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px);
   }
   50% {
@@ -185,7 +187,8 @@
 }
 
 @keyframes glow-pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
   }
   50% {
@@ -261,7 +264,12 @@
   }
 
   .animate-shimmer {
-    background: linear-gradient(90deg, var(--color-background), var(--color-card), var(--color-background));
+    background: linear-gradient(
+      90deg,
+      var(--color-background),
+      var(--color-card),
+      var(--color-background)
+    );
     background-size: 1000px 100%;
     animation: shimmer 2s infinite;
   }
@@ -308,7 +316,9 @@
   }
 
   .topbar {
-    box-shadow: 0 1px 0 oklch(1 0 0 / 0.65), 0 8px 24px oklch(0.22 0.06 258 / 0.04);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.65),
+      0 8px 24px oklch(0.22 0.06 258 / 0.04);
   }
 
   .surface-card {
@@ -330,12 +340,16 @@
     height: 12rem;
     border: 1px solid oklch(1 0 0 / 0.15);
     border-radius: 999px;
-    box-shadow: 0 0 0 2rem oklch(1 0 0 / 0.04), 0 0 0 4rem oklch(1 0 0 / 0.025);
+    box-shadow:
+      0 0 0 2rem oklch(1 0 0 / 0.04),
+      0 0 0 4rem oklch(1 0 0 / 0.025);
     content: "";
   }
 
   .table-row-interactive {
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   .table-row-interactive:hover {
@@ -450,8 +464,20 @@
 }
 
 @media print {
-  @page { size: A5 portrait; margin: 0; }
-  body { background: white; }
-  .no-print { display: none !important; }
-  .print-document { width: 148mm !important; min-height: 210mm !important; box-shadow: none !important; margin: 0 !important; }
+  @page {
+    size: A5 portrait;
+    margin: 0;
+  }
+  body {
+    background: white;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-document {
+    width: 148mm !important;
+    min-height: 210mm !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
 }
