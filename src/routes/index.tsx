@@ -49,9 +49,9 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
         
         {/* Logo image */}
         <img 
-          src="/logo.svg" 
+          src="/B.A.B.C LOGO.png" 
           alt="B.A.B.C Logo" 
-          className="relative size-11 rounded-lg shadow-lg glow-primary"
+          className="relative size-11 rounded-lg shadow-lg glow-primary object-contain"
         />
       </div>
       
