@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { getSavedQuotations, saveDraft, updateDraft, getDrafts, saveQuotation, convertDraftToQuotation } from "@/services/quotation-service";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -30,7 +31,21 @@ type Item = { id: number; description: string; unit: string; quantity: number; r
 type View = "dashboard" | "quotes" | "invoices" | "payments" | "clients" | "settings";
 
 const services = ["Architectural drawing & approvals", "Site clearing and setting out", "Reinforced concrete foundation", "Blockwork and structural frame", "Roofing and rainwater system", "Electrical and plumbing installation", "Finishes and handover"];
-const sampleQuotes: Array<{ number: string; client: string; project: string; amount: number; status: string; date: string }> = [];
+
+// Load quotations from storage
+function getStoredQuotationsForDisplay() {
+  const quotations = getSavedQuotations();
+  return quotations.map(q => ({
+    number: q.quotationNumber,
+    client: q.client.name,
+    project: q.title,
+    amount: q.total,
+    status: q.status.charAt(0).toUpperCase() + q.status.slice(1),
+    date: new Date(q.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+  }));
+}
+
+const sampleQuotes = getStoredQuotationsForDisplay();
 
 const money = (value: number, currency = "NGN") => new Intl.NumberFormat("en-NG", { style: "currency", currency, maximumFractionDigits: currency === "NGN" ? 0 : 2 }).format(value);
 
@@ -71,18 +86,14 @@ function QuotationApp() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  const [currentQuotationId, setCurrentQuotationId] = useState<string | null>(null);
   const [currency, setCurrency] = useState("NGN");
-  const [client, setClient] = useState({ name: "Obinna Holdings", company: "Obinna Holdings Ltd", phone: "+234 803 555 0128", address: "Agu Awka GRA, Awka, Anambra State" });
-  const [title, setTitle] = useState("Proposed 4-Bedroom Duplex Construction");
-  const [discount, setDiscount] = useState(500000);
+  const [client, setClient] = useState({ name: "", company: "", phone: "", address: "" });
+  const [title, setTitle] = useState("");
+  const [discount, setDiscount] = useState(0);
   const [depositPct, setDepositPct] = useState(40);
   const [exchangeRate, setExchangeRate] = useState(1600);
-  const [items, setItems] = useState<Item[]>([
-    { id: 1, description: services[0] ?? "Architectural drawing & approvals", unit: "lump sum", quantity: 1, rate: 2850000 },
-    { id: 2, description: services[1] ?? "Site clearing and setting out", unit: "lump sum", quantity: 1, rate: 2200000 },
-    { id: 3, description: services[2] ?? "Reinforced concrete foundation", unit: "lump sum", quantity: 1, rate: 12800000 },
-    { id: 4, description: services[3] ?? "Blockwork and structural frame", unit: "lump sum", quantity: 1, rate: 9600000 },
-  ]);
+  const [items, setItems] = useState<Item[]>([]);
   const documentRef = useRef<HTMLDivElement>(null);
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.quantity * item.rate, 0), [items]);
   const total = Math.max(0, subtotal - discount);
@@ -90,6 +101,73 @@ function QuotationApp() {
   const converted = currency === "NGN" ? total / exchangeRate : total * exchangeRate;
 
   useEffect(() => { if (!notice) return; const timer = window.setTimeout(() => setNotice(""), 2600); return () => window.clearTimeout(timer); }, [notice]);
+
+  // Auto-save draft every 30 seconds when editing
+  useEffect(() => {
+    if (!title || items.length === 0) return;
+    
+    const interval = setInterval(() => {
+      const draftData = {
+        quotationNumber: currentQuotationId || "DRAFT-" + Date.now(),
+        title,
+        client,
+        items,
+        currency,
+        discount,
+        depositPct,
+        exchangeRate,
+        subtotal,
+        total,
+        status: "draft" as const,
+      };
+      
+      if (currentQuotationId?.startsWith("draft_")) {
+        updateDraft(currentQuotationId, draftData);
+      } else {
+        const saved = saveDraft(draftData);
+        setCurrentQuotationId(saved.id);
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [title, client, items, currency, discount, depositPct, exchangeRate, subtotal, total, currentQuotationId]);
+
+  // Save quotation function
+  const saveCurrentQuotation = () => {
+    if (!title || items.length === 0 || !client.name) {
+      notify("Please fill in all required fields");
+      return;
+    }
+
+    const quotationData = {
+      quotationNumber: `BABC-Q-${String(getSavedQuotations().length + 1).padStart(4, "0")}`,
+      title,
+      client,
+      items,
+      currency,
+      discount,
+      depositPct,
+      exchangeRate,
+      subtotal,
+      total,
+      status: "sent" as const,
+    };
+
+    const saved = saveQuotation(quotationData);
+    setCurrentQuotationId(saved.id);
+    notify("Quotation saved successfully");
+  };
+
+  // Create new quotation
+  const newQuotation = () => {
+    setCurrentQuotationId(null);
+    setTitle("");
+    setClient({ name: "", company: "", phone: "", address: "" });
+    setItems([]);
+    setDiscount(0);
+    setEditorOpen(true);
+    notify("New quotation created");
+  };
   const updateItem = (id: number, key: keyof Item, value: string | number) => setItems((current) => current.map((item) => item.id === id ? { ...item, [key]: value } : item));
   const addItem = () => setItems((current) => [...current, { id: Date.now(), description: services[4] ?? "New construction item", unit: "lump sum", quantity: 1, rate: 0 }]);
   const notify = (message: string) => setNotice(message);
@@ -112,7 +190,7 @@ function QuotationApp() {
     <main className="min-w-0 overflow-x-hidden lg:pl-64">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur sm:px-8 shadow-sm">
         <div className="flex items-center gap-3"><Button variant="ghost" size="icon" className="lg:hidden transition-smooth hover:bg-accent" onClick={() => setMenuOpen(true)} aria-label="Open menu"><Menu /></Button><div className="animate-fade-in"><p className="text-xs font-semibold uppercase text-muted-foreground">Quotation Studio</p><p className="font-brand text-sm font-bold">B.A.B.C</p></div></div>
-        <div className="flex items-center gap-2"><Button variant="ghost" size="icon" className="transition-smooth hover:bg-accent" aria-label="Notifications"><Bell /></Button><Button variant="gold" onClick={() => setEditorOpen(true)} className="transition-smooth glow-primary-hover shadow-md"><Plus /> New quotation</Button></div>
+        <div className="flex items-center gap-2"><Button variant="ghost" size="icon" className="transition-smooth hover:bg-accent" aria-label="Notifications"><Bell /></Button><Button variant="gold" onClick={newQuotation} className="transition-smooth glow-primary-hover shadow-md"><Plus /> New quotation</Button></div>
       </header>
 
       {view === "dashboard" && <Dashboard onCreate={() => setEditorOpen(true)} onView={() => setView("quotes")} />}
@@ -131,7 +209,7 @@ function QuotationApp() {
         <section><SectionTitle number="03" title="Terms & notes" /><Textarea defaultValue="This quotation is valid for 14 days. Work commences upon receipt of the required deposit. Variations will be quoted separately." rows={4}/></section></div>
         <aside className="space-y-5"><div><Label>Document currency</Label><Select value={currency} onValueChange={setCurrency}><SelectTrigger className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="NGN">NGN — Nigerian Naira</SelectItem><SelectItem value="USD">USD — US Dollars</SelectItem></SelectContent></Select></div><Field label="Exchange rate (₦ / $)" value={String(exchangeRate)} type="number" onChange={(v) => setExchangeRate(Number(v))}/><Field label={`Discount (${currency})`} value={String(discount)} type="number" onChange={(v) => setDiscount(Number(v))}/><Field label="Deposit required (%)" value={String(depositPct)} type="number" onChange={(v) => setDepositPct(Number(v))}/><div className="border-t border-border pt-5"><SummaryRow label="Subtotal" value={money(subtotal,currency)}/><SummaryRow label="Discount" value={`− ${money(discount,currency)}`}/><div className="mt-4 bg-primary p-4 text-primary-foreground"><p className="text-xs font-semibold opacity-70">Grand total</p><p className="mt-1 text-xl font-bold">{money(total,currency)}</p><p className="mt-2 text-xs opacity-80">≈ {money(converted,currency === "NGN" ? "USD" : "NGN")}</p></div><SummaryRow label={`Deposit (${depositPct}%)`} value={money(deposit,currency)}/><SummaryRow label="Outstanding" value={money(total-deposit,currency)}/></div></aside>
       </div></div>
-      <div className="flex flex-wrap justify-end gap-2 border-t border-border bg-card px-5 py-4 sm:px-8"><Button variant="outline" onClick={() => notify("Draft saved securely")}><Clock3 /> Save draft</Button><Button onClick={() => setPreviewOpen(true)}><FileCheck2 /> Preview quotation</Button></div>
+      <div className="flex flex-wrap justify-end gap-2 border-t border-border bg-card px-5 py-4 sm:px-8"><Button variant="outline" onClick={newQuotation}><Plus /> New quotation</Button><Button variant="secondary" onClick={() => notify("Draft auto-saved")}><Clock3 /> Auto-saving</Button><Button onClick={() => { saveCurrentQuotation(); setPreviewOpen(true); }}><FileCheck2 /> Save & Preview</Button></div>
     </div></div>}
 
     {previewOpen && <div className="fixed inset-0 z-[60] overflow-y-auto bg-foreground/70 p-3 sm:p-8"><div className="mx-auto flex max-w-4xl flex-col items-center"><div className="no-print mb-4 flex w-full flex-wrap justify-between gap-2"><Button variant="secondary" onClick={() => setPreviewOpen(false)}><X /> Close</Button><div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => window.print()}><Printer /> Print A5</Button><Button variant="secondary" onClick={exportPdf}><Download /> PDF</Button><Button variant="secondary" onClick={exportJpeg}><Download /> JPEG</Button><Button variant="gold" onClick={shareWhatsApp}><Share2 /> WhatsApp</Button></div></div><QuoteDocument ref={documentRef} client={client} title={title} items={items} currency={currency} subtotal={subtotal} discount={discount} total={total} deposit={deposit} converted={converted} /></div></div>}
@@ -139,7 +217,19 @@ function QuotationApp() {
 }
 
 function Dashboard({ onCreate, onView }: { onCreate: () => void; onView: () => void }) {
-  const stats = [["Quoted this month","₦145.4M","+18.2%",FileText],["Accepted value","₦89.6M","61.6%",FileCheck2],["Payments received","₦21.8M","This month",CircleDollarSign],["Outstanding","₦35.9M","4 invoices",Clock3]] as const;
+  const quotations = getSavedQuotations();
+  const totalValue = quotations.reduce((sum, q) => sum + q.total, 0);
+  const acceptedAmount = quotations.filter(q => q.status === "accepted").reduce((sum, q) => sum + q.total, 0);
+  const acceptedCount = quotations.filter(q => q.status === "accepted").length;
+  const paidAmount = quotations.filter(q => q.status === "paid").reduce((sum, q) => sum + q.total, 0);
+  const outstandingAmount = quotations.filter(q => q.status !== "paid").reduce((sum, q) => sum + (q.total - q.deposit), 0);
+  
+  const stats = [
+    ["Total quotations", money(totalValue), `${quotations.length} quotes`, FileText],
+    ["Accepted", money(acceptedAmount), `${acceptedCount} deals`, FileCheck2],
+    ["Payments received", money(paidAmount), quotations.filter(q => q.status === "paid").length + " paid", CircleDollarSign],
+    ["Outstanding", money(outstandingAmount), "Awaiting payment", Clock3],
+  ] as const;
   return <div className="mx-auto max-w-7xl p-4 sm:p-8"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div className="animate-slide-up"><p className="text-xs font-bold uppercase text-highlight">Friday, 11 September</p><h1 className="mt-2 font-brand text-3xl font-bold sm:text-4xl">Good afternoon, Hillary.</h1><p className="mt-2 text-sm text-muted-foreground">Your business at a glance.</p></div><Button onClick={onCreate} className="transition-smooth glow-primary-hover"><Plus /> Create quotation</Button></div>
   <div className="mt-8 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 xl:grid-cols-4 shadow-lg">{stats.map(([label,value,meta,Icon], idx) => <div key={label} className="bg-card p-5 transition-smooth hover:shadow-lg hover:translate-y-[-2px] animate-fade-in" style={{animationDelay: `${idx * 100}ms`}}><div className="flex items-center justify-between"><p className="text-xs font-semibold text-muted-foreground">{label}</p><Icon className="size-4 text-primary" /></div><p className="mt-5 text-2xl font-bold">{value}</p><p className="mt-1 text-xs font-semibold text-success">{meta}</p></div>)}</div>
   <div className="mt-8 grid min-w-0 gap-6 xl:grid-cols-[1.55fr_1fr]"><section className="min-w-0 bg-card rounded-lg shadow-lg overflow-hidden"><div className="flex items-center justify-between border-b border-border p-5"><div><h2 className="font-brand font-bold">Recent quotations</h2><p className="mt-1 text-xs text-muted-foreground">Latest client activity</p></div><Button variant="ghost" size="sm" onClick={onView} className="transition-smooth hover:translate-x-1">View all <ChevronRight /></Button></div><QuoteTable /></section><section className="min-w-0 bg-gradient-to-br from-primary to-primary/90 p-6 text-primary-foreground rounded-lg shadow-lg"><p className="text-xs font-bold uppercase text-highlight">September performance</p><h2 className="mt-3 font-brand text-2xl font-bold">61.6% acceptance rate</h2><div className="mt-8 flex h-36 items-end gap-3">{[32,55,43,78,62,91,70].map((v,i)=><div key={i} className="flex h-full flex-1 items-end bg-primary-foreground/10 rounded-t hover:bg-primary-foreground/20 transition-smooth"><div className="w-full bg-highlight rounded-t" style={{height:`${v}%`}} /></div>)}</div><div className="mt-4 flex justify-between text-[10px] opacity-70"><span>Week 1</span><span>Week 4</span></div><div className="mt-7 border-t border-primary-foreground/20 pt-5"><p className="text-xs opacity-70">Next expiring quotation</p><p className="mt-1 text-sm font-semibold">BABC-Q-0027 · in 4 days</p></div></section></div></div>;
