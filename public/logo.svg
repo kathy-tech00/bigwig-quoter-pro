@@ -1,0 +1,53 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Define gradients and filters -->
+  <defs>
+    <!-- Main gradient: Blue to deeper blue -->
+    <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#3B82F6" />
+      <stop offset="50%" stopColor="#2563EB" />
+      <stop offset="100%" stopColor="#1D4ED8" />
+    </linearGradient>
+    
+    <!-- Gold accent gradient -->
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#FBBF24" />
+      <stop offset="100%" stopColor="#F59E0B" />
+    </linearGradient>
+    
+    <!-- Glow effect -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+      <feMerge>
+        <feMergeNode in="coloredBlur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <!-- Shadow effect -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" floodOpacity="0.3" />
+    </filter>
+  </defs>
+  
+  <!-- Background circle with glow -->
+  <circle cx="100" cy="100" r="95" fill="url(#mainGradient)" filter="url(#glow)" />
+  
+  <!-- Highlight accent (top-left) -->
+  <ellipse cx="65" cy="65" rx="40" ry="40" fill="white" opacity="0.2" />
+  
+  <!-- Inner shadow ring -->
+  <circle cx="100" cy="100" r="95" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="2" />
+  
+  <!-- Gold accent stripe (right edge) -->
+  <path d="M 160 60 Q 180 100 160 140" stroke="url(#goldGradient)" strokeWidth="8" fill="none" strokeLinecap="round" opacity="0.8" />
+  
+  <!-- Main text: BW -->
+  <text x="100" y="125" textAnchor="middle" fontSize="80" fontWeight="900" fontFamily="'Poppins', 'Arial', sans-serif" fill="white" letterSpacing="-3">
+    BW
+  </text>
+  
+  <!-- Subtitle: B.A.B.C (smaller, below the main logo) -->
+  <text x="100" y="165" textAnchor="middle" fontSize="18" fontWeight="700" fontFamily="'Poppins', 'Arial', sans-serif" fill="white" opacity="0.95" letterSpacing="2">
+    B.A.B.C
+  </text>
+</svg>
