@@ -276,7 +276,7 @@ function Dashboard({ quotations, onCreate, onView, onEdit }: { quotations: Store
   const acceptedAmount = quotations.filter(q => q.status === "accepted").reduce((sum, q) => sum + q.total, 0);
   const acceptedCount = quotations.filter(q => q.status === "accepted").length;
   const paidAmount = quotations.filter(q => q.status === "paid").reduce((sum, q) => sum + q.total, 0);
-  const outstandingAmount = quotations.filter(q => q.status !== "paid").reduce((sum, q) => sum + (q.total - q.deposit), 0);
+  const outstandingAmount = quotations.filter(q => q.status !== "paid").reduce((sum, q) => sum + (q.total - q.total * (q.depositPct / 100)), 0);
   
   const stats = [
     ["Total quotations", money(totalValue), `${quotations.length} quotes`, FileText],
