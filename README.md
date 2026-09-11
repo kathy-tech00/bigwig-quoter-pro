@@ -55,3 +55,20 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Vercel deployment
+
+This is a TanStack Start application with a Vite build. Vercel can deploy it
+without any provider-specific configuration.
+
+Use these project settings:
+
+- Framework preset: `TanStack Start` (or `Other` if the preset is unavailable)
+- Install command: `npm ci`
+- Build command: `npm run build`
+- Output directory: leave blank / use Vercel's default for the TanStack Start preset
+
+Copy `.env.example` to `.env` for local development. In Vercel, add the same
+Supabase variables from `.env.example` as project environment variables for
+the environments where the application runs. Do not commit `.env` or any
+secret key.
