@@ -58,17 +58,16 @@ npm run dev
 
 ## Vercel deployment
 
-This is a TanStack Start application with a Vite build. Vercel can deploy it
-without any provider-specific configuration.
+This is a Vite + React application built for static hosting on Vercel.
 
 Use these project settings:
 
-- Framework preset: `TanStack Start` (or `Other` if the preset is unavailable)
-- Install command: `npm ci`
+- Framework preset: `Vite`
+- Install command: `npm install`
 - Build command: `npm run build`
-- Output directory: leave blank / use Vercel's default for the TanStack Start preset
+- Output directory: `dist`
 
 No environment variables are required for the current quotation app: quotations
-are stored in the browser. The Supabase variables listed in `.env.example` are
-optional and should only be configured if Supabase-backed authentication or
-server functions are enabled later. Do not commit `.env` or any secret key.
+are stored in the browser. The Supabase values in `.env.example` are optional and
+should only be added later if you enable Supabase-backed auth or server functions.
+Do not commit `.env` or any secret key.
