@@ -16,6 +16,7 @@ import {
   Instagram,
   LayoutDashboard,
   Menu,
+  Moon,
   MoreHorizontal,
   Plus,
   Printer,
@@ -24,6 +25,7 @@ import {
   Send,
   Settings,
   Share2,
+  Sun,
   Trash2,
   Users,
   X,
@@ -185,6 +187,7 @@ function QuotationApp() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [notice, setNotice] = useState("");
   const [currentQuotationId, setCurrentQuotationId] = useState<string | null>(null);
   const [currency, setCurrency] = useState("NGN");
@@ -214,6 +217,19 @@ function QuotationApp() {
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
+
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem("babc-theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const nextDark = savedTheme ? savedTheme === "dark" : prefersDark;
+    setIsDarkMode(nextDark);
+    document.documentElement.classList.toggle("dark", nextDark);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDarkMode);
+    window.localStorage.setItem("babc-theme", isDarkMode ? "dark" : "light");
+  }, [isDarkMode]);
 
   useEffect(() => {
     if (!notice) return;
@@ -461,6 +477,16 @@ function QuotationApp() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="transition-smooth hover:bg-accent"
+              aria-label="Toggle theme"
+              onClick={() => setIsDarkMode((value) => !value)}
+              title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDarkMode ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            </Button>
             <Button
               variant="ghost"
               size="icon"
