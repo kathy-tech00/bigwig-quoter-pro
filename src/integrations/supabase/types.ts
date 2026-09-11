@@ -14,16 +14,393 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          company_name: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          owner_id: string
+          phone: string
+          project_address: string
+          updated_at: string
+        }
+        Insert: {
+          company_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name: string
+          owner_id: string
+          phone?: string
+          project_address?: string
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          phone?: string
+          project_address?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      company_settings: {
+        Row: {
+          address: string
+          company_name: string
+          created_at: string
+          default_exchange_rate: number
+          default_expiry_days: number
+          email: string
+          id: string
+          invoice_prefix: string
+          ngn_bank: Json
+          owner_id: string
+          phone: string
+          quote_prefix: string
+          registration_number: string
+          signatory_name: string
+          signatory_position: string
+          tagline: string
+          updated_at: string
+          usd_bank: Json
+          website: string
+        }
+        Insert: {
+          address?: string
+          company_name: string
+          created_at?: string
+          default_exchange_rate?: number
+          default_expiry_days?: number
+          email?: string
+          id?: string
+          invoice_prefix?: string
+          ngn_bank?: Json
+          owner_id: string
+          phone?: string
+          quote_prefix?: string
+          registration_number?: string
+          signatory_name?: string
+          signatory_position?: string
+          tagline?: string
+          updated_at?: string
+          usd_bank?: Json
+          website?: string
+        }
+        Update: {
+          address?: string
+          company_name?: string
+          created_at?: string
+          default_exchange_rate?: number
+          default_expiry_days?: number
+          email?: string
+          id?: string
+          invoice_prefix?: string
+          ngn_bank?: Json
+          owner_id?: string
+          phone?: string
+          quote_prefix?: string
+          registration_number?: string
+          signatory_name?: string
+          signatory_position?: string
+          tagline?: string
+          updated_at?: string
+          usd_bank?: Json
+          website?: string
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          currency: string
+          due_date: string
+          exchange_rate: number
+          id: string
+          invoice_number: string
+          issue_date: string
+          owner_id: string
+          paid_minor: number
+          quotation_id: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          total_minor: number
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          currency: string
+          due_date: string
+          exchange_rate: number
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          owner_id: string
+          paid_minor?: number
+          quotation_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          total_minor: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          due_date?: string
+          exchange_rate?: number
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          owner_id?: string
+          paid_minor?: number
+          quotation_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          total_minor?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount_minor: number
+          created_at: string
+          currency: string
+          id: string
+          invoice_id: string
+          method: string
+          notes: string
+          owner_id: string
+          paid_at: string
+          reference: string
+        }
+        Insert: {
+          amount_minor: number
+          created_at?: string
+          currency: string
+          id?: string
+          invoice_id: string
+          method?: string
+          notes?: string
+          owner_id: string
+          paid_at?: string
+          reference?: string
+        }
+        Update: {
+          amount_minor?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_id?: string
+          method?: string
+          notes?: string
+          owner_id?: string
+          paid_at?: string
+          reference?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotation_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          position: number
+          quantity: number
+          quotation_id: string
+          rate_minor: number
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          position?: number
+          quantity: number
+          quotation_id: string
+          rate_minor: number
+          unit?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          position?: number
+          quantity?: number
+          quotation_id?: string
+          rate_minor?: number
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_items_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotations: {
+        Row: {
+          accepted_at: string | null
+          client_id: string | null
+          created_at: string
+          currency: string
+          deposit_minor: number
+          discount_minor: number
+          exchange_rate: number
+          expiry_date: string
+          grand_total_minor: number
+          id: string
+          issue_date: string
+          notes: string
+          owner_id: string
+          project_address: string
+          public_token: string
+          quotation_number: string
+          rejected_at: string | null
+          signature_data: string | null
+          signature_name: string | null
+          status: Database["public"]["Enums"]["quotation_status"]
+          subtotal_minor: number
+          tax_minor: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          deposit_minor?: number
+          discount_minor?: number
+          exchange_rate: number
+          expiry_date: string
+          grand_total_minor?: number
+          id?: string
+          issue_date?: string
+          notes?: string
+          owner_id: string
+          project_address?: string
+          public_token?: string
+          quotation_number: string
+          rejected_at?: string | null
+          signature_data?: string | null
+          signature_name?: string | null
+          status?: Database["public"]["Enums"]["quotation_status"]
+          subtotal_minor?: number
+          tax_minor?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          deposit_minor?: number
+          discount_minor?: number
+          exchange_rate?: number
+          expiry_date?: string
+          grand_total_minor?: number
+          id?: string
+          issue_date?: string
+          notes?: string
+          owner_id?: string
+          project_address?: string
+          public_token?: string
+          quotation_number?: string
+          rejected_at?: string | null
+          signature_data?: string | null
+          signature_name?: string | null
+          status?: Database["public"]["Enums"]["quotation_status"]
+          subtotal_minor?: number
+          tax_minor?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin"
+      invoice_status: "unpaid" | "partially_paid" | "paid" | "overdue"
+      quotation_status:
+        | "draft"
+        | "sent"
+        | "viewed"
+        | "accepted"
+        | "rejected"
+        | "expired"
+        | "invoiced"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +527,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin"],
+      invoice_status: ["unpaid", "partially_paid", "paid", "overdue"],
+      quotation_status: [
+        "draft",
+        "sent",
+        "viewed",
+        "accepted",
+        "rejected",
+        "expired",
+        "invoiced",
+      ],
+    },
   },
 } as const
