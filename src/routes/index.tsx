@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { toJpeg } from "html-to-image";
 import { jsPDF } from "jspdf";
 import {
@@ -61,10 +61,10 @@ function QuotationApp() {
   const [depositPct, setDepositPct] = useState(40);
   const [exchangeRate, setExchangeRate] = useState(1600);
   const [items, setItems] = useState<Item[]>([
-    { id: 1, description: services[0], unit: "lump sum", quantity: 1, rate: 2850000 },
-    { id: 2, description: services[1], unit: "lump sum", quantity: 1, rate: 2200000 },
-    { id: 3, description: services[2], unit: "lump sum", quantity: 1, rate: 12800000 },
-    { id: 4, description: services[3], unit: "lump sum", quantity: 1, rate: 9600000 },
+    { id: 1, description: services[0] ?? "Architectural drawing & approvals", unit: "lump sum", quantity: 1, rate: 2850000 },
+    { id: 2, description: services[1] ?? "Site clearing and setting out", unit: "lump sum", quantity: 1, rate: 2200000 },
+    { id: 3, description: services[2] ?? "Reinforced concrete foundation", unit: "lump sum", quantity: 1, rate: 12800000 },
+    { id: 4, description: services[3] ?? "Blockwork and structural frame", unit: "lump sum", quantity: 1, rate: 9600000 },
   ]);
   const documentRef = useRef<HTMLDivElement>(null);
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.quantity * item.rate, 0), [items]);
@@ -74,7 +74,7 @@ function QuotationApp() {
 
   useEffect(() => { if (!notice) return; const timer = window.setTimeout(() => setNotice(""), 2600); return () => window.clearTimeout(timer); }, [notice]);
   const updateItem = (id: number, key: keyof Item, value: string | number) => setItems((current) => current.map((item) => item.id === id ? { ...item, [key]: value } : item));
-  const addItem = () => setItems((current) => [...current, { id: Date.now(), description: services[4], unit: "lump sum", quantity: 1, rate: 0 }]);
+  const addItem = () => setItems((current) => [...current, { id: Date.now(), description: services[4] ?? "New construction item", unit: "lump sum", quantity: 1, rate: 0 }]);
   const notify = (message: string) => setNotice(message);
   const exportJpeg = async () => { if (!documentRef.current) return; const data = await toJpeg(documentRef.current, { quality: .96, pixelRatio: 2, backgroundColor: "#ffffff" }); const link = document.createElement("a"); link.download = "BABC-Q-0029.jpg"; link.href = data; link.click(); notify("JPEG ready for WhatsApp"); };
   const exportPdf = async () => { if (!documentRef.current) return; const data = await toJpeg(documentRef.current, { quality: .98, pixelRatio: 2, backgroundColor: "#ffffff" }); const pdf = new jsPDF({ unit: "mm", format: "a5", orientation: "portrait" }); pdf.addImage(data, "JPEG", 0, 0, 148, 210); pdf.save("BABC-Q-0029.pdf"); notify("A5 PDF downloaded"); };
@@ -141,7 +141,6 @@ function SectionTitle({number,title}:{number:string;title:string}) { return <div
 function Field({label,value,onChange,type="text"}:{label:string;value:string;onChange:(v:string)=>void;type?:string}) { return <div><Label>{label}</Label><Input className="mt-2" type={type} value={value} onChange={(e)=>onChange(e.target.value)} /></div> }
 function SummaryRow({label,value}:{label:string;value:string}) { return <div className="flex justify-between border-b border-border py-3 text-xs"><span className="text-muted-foreground">{label}</span><strong>{value}</strong></div> }
 
-import { forwardRef } from "react";
 const QuoteDocument = forwardRef<HTMLDivElement, {client:{name:string;company:string;phone:string;address:string};title:string;items:Item[];currency:string;subtotal:number;discount:number;total:number;deposit:number;converted:number}>(({client,title,items,currency,subtotal,discount,total,deposit,converted},ref) => <div ref={ref} className="print-document w-[148mm] min-h-[210mm] bg-document p-[11mm] text-foreground shadow-2xl">
   <header className="flex justify-between border-b-2 border-primary pb-5"><BrandMark/><div className="text-right"><p className="font-brand text-2xl font-bold text-primary">QUOTATION</p><p className="mt-1 text-xs font-bold">BABC-Q-0029</p><p className="mt-1 text-[9px] text-muted-foreground">11 Sep 2026 · Valid until 25 Sep 2026</p></div></header>
   <div className="mt-5 grid grid-cols-2 gap-6"><div><p className="text-[8px] font-bold uppercase text-highlight">Prepared for</p><p className="mt-2 text-sm font-bold">{client.name}</p><p className="text-[9px] text-muted-foreground">{client.company}<br/>{client.phone}<br/>{client.address}</p></div><div className="text-right"><p className="text-[8px] font-bold uppercase text-highlight">Project</p><p className="mt-2 text-xs font-bold">{title}</p></div></div>
