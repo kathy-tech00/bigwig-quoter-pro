@@ -1,28 +1,33 @@
 /**
  * Premium B.A.B.C Brand Logo Component
- * Features: Gradient styling, floating animation, responsive sizing
+ * Features: Elegant gradient, professional styling, floating animation
  */
 
 export function BrandLogo({ size = "md", className = "" }: { size?: "sm" | "md" | "lg"; className?: string }) {
-  const sizes = {
-    sm: "size-8 text-xs",
-    md: "size-11 text-lg",
-    lg: "size-16 text-2xl",
+  const sizeMap = {
+    sm: { container: "size-10", text: "text-sm", padding: "p-1.5" },
+    md: { container: "size-12", text: "text-base", padding: "p-2" },
+    lg: { container: "size-16", text: "text-2xl", padding: "p-3" },
   };
 
+  const sizeConfig = sizeMap[size];
+
   return (
-    <div className={`relative inline-flex items-center justify-center ${sizes[size]}`}>
-      {/* Outer glow effect */}
-      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/30 via-accent/20 to-transparent blur-lg opacity-75" />
+    <div className={`relative inline-flex items-center justify-center ${sizeConfig.container}`}>
+      {/* Premium glow effect */}
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-400/40 via-blue-500/20 to-transparent blur-xl opacity-80" />
 
-      {/* Main logo background with gradient */}
-      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary via-primary/90 to-primary/80 shadow-lg" />
+      {/* Main background with premium gradient */}
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-2xl" />
 
-      {/* Inner highlight accent */}
-      <div className="absolute top-0 left-0 w-1/2 h-1/2 rounded-tl-lg bg-gradient-to-br from-white/20 to-transparent" />
+      {/* Accent gold stripe on right */}
+      <div className="absolute right-0 top-1/4 h-1/2 w-1 bg-gradient-to-b from-amber-400 to-amber-500 rounded-full opacity-70" />
+
+      {/* Inner highlight for depth */}
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/15 to-transparent" />
 
       {/* Text content */}
-      <div className={`relative font-brand font-black text-primary-foreground tracking-tight ${className}`}>
+      <div className={`relative font-black text-white tracking-tighter ${sizeConfig.text} ${className}`}>
         BW
       </div>
     </div>
@@ -37,9 +42,11 @@ export function BrandLogoWithText({ compact = false, className = "" }: { compact
       </div>
 
       {!compact && (
-        <div className="animate-fade-in">
-          <p className="font-brand text-sm font-bold leading-none text-foreground">B.A.B.C</p>
-          <p className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">From Vision to Legacy</p>
+        <div className="animate-fade-in space-y-1">
+          <div className="flex items-baseline gap-1">
+            <p className="font-black text-base text-foreground">B.A.B.C</p>
+          </div>
+          <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">From Vision to Legacy</p>
         </div>
       )}
     </div>
@@ -47,35 +54,44 @@ export function BrandLogoWithText({ compact = false, className = "" }: { compact
 }
 
 /**
- * SVG-based alternative logo for advanced styling
+ * SVG-based premium logo for print and high-res display
  * Can be customized with different colors and styles
  */
 export function BrandLogoSVG({ 
-  size = 64, 
-  primaryColor = "#3b82f6",
-  accentColor = "#fbbf24",
+  size = 128, 
+  withText = true,
 }: { 
   size?: number;
-  primaryColor?: string;
-  accentColor?: string;
+  withText?: boolean;
 }) {
+  const viewHeight = withText ? 160 : 128;
+  
   return (
     <svg
       width={size}
-      height={size}
-      viewBox="0 0 64 64"
+      height={size * (viewHeight / 128)}
+      viewBox={`0 0 128 ${viewHeight}`}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className="animate-float"
     >
-      {/* Background gradient definition */}
       <defs>
-        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={primaryColor} />
-          <stop offset="100%" stopColor={primaryColor} stopOpacity="0.8" />
+        {/* Premium blue gradient */}
+        <linearGradient id="premiumGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#3B82F6" />
+          <stop offset="50%" stopColor="#2563EB" />
+          <stop offset="100%" stopColor="#1D4ED8" />
         </linearGradient>
-        <filter id="logoGlow">
-          <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+
+        {/* Gold accent gradient */}
+        <linearGradient id="goldAccent" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FBBF24" />
+          <stop offset="100%" stopColor="#F59E0B" />
+        </linearGradient>
+
+        {/* Glow effect */}
+        <filter id="premiumGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
@@ -83,25 +99,33 @@ export function BrandLogoSVG({
         </filter>
       </defs>
 
-      {/* Main background shape */}
-      <rect x="4" y="4" width="56" height="56" rx="8" fill="url(#logoGradient)" filter="url(#logoGlow)" />
+      {/* Main logo circle background */}
+      <rect x="16" y="8" width="96" height="96" rx="16" fill="url(#premiumGradient)" filter="url(#premiumGlow)" />
 
-      {/* Accent corner highlight */}
-      <rect x="4" y="4" width="28" height="28" rx="8" fill="white" opacity="0.15" />
+      {/* Top-left highlight for depth */}
+      <rect x="16" y="8" width="48" height="48" rx="16" fill="white" opacity="0.18" />
 
-      {/* Text - BW */}
-      <text
-        x="32"
-        y="40"
-        textAnchor="middle"
-        fontSize="28"
-        fontWeight="900"
-        fontFamily="'Poppins', sans-serif"
-        fill="white"
-        letterSpacing="-1"
-      >
+      {/* Gold accent stripe on right */}
+      <rect x="104" y="32" width="6" height="56" rx="3" fill="url(#goldAccent)" opacity="0.85" />
+
+      {/* Premium text: BW */}
+      <text x="64" y="68" textAnchor="middle" fontSize="56" fontWeight="900" fontFamily="'Poppins', sans-serif" fill="white" letterSpacing="-2">
         BW
       </text>
+
+      {withText && (
+        <>
+          {/* Subtitle: B.A.B.C */}
+          <text x="64" y="128" textAnchor="middle" fontSize="16" fontWeight="700" fontFamily="'Poppins', sans-serif" fill="#1F2937" letterSpacing="1.5">
+            B.A.B.C
+          </text>
+
+          {/* Tagline */}
+          <text x="64" y="148" textAnchor="middle" fontSize="10" fontWeight="600" fontFamily="'Inter', sans-serif" fill="#6B7280" letterSpacing="1">
+            FROM VISION TO LEGACY
+          </text>
+        </>
+      )}
     </svg>
   );
 }
