@@ -30,12 +30,7 @@ type Item = { id: number; description: string; unit: string; quantity: number; r
 type View = "dashboard" | "quotes" | "invoices" | "payments" | "clients" | "settings";
 
 const services = ["Architectural drawing & approvals", "Site clearing and setting out", "Reinforced concrete foundation", "Blockwork and structural frame", "Roofing and rainwater system", "Electrical and plumbing installation", "Finishes and handover"];
-const sampleQuotes = [
-  { number: "BABC-Q-0028", client: "Obinna Holdings", project: "4-Bedroom Duplex, Awka", amount: 42850000, status: "Accepted", date: "08 Sep 2026" },
-  { number: "BABC-Q-0027", client: "Nwafor Residence", project: "Residential Renovation, Nnewi", amount: 14860000, status: "Sent", date: "05 Sep 2026" },
-  { number: "BABC-Q-0026", client: "Cedar View Ltd", project: "Apartment Block, Onitsha", amount: 87200000, status: "Draft", date: "01 Sep 2026" },
-  { number: "BABC-Q-0025", client: "Adaora Eze", project: "Land & Building Inspection", amount: 450000, status: "Paid", date: "28 Aug 2026" },
-];
+const sampleQuotes: Array<{ number: string; client: string; project: string; amount: number; status: string; date: string }> = [];
 
 const money = (value: number, currency = "NGN") => new Intl.NumberFormat("en-NG", { style: "currency", currency, maximumFractionDigits: currency === "NGN" ? 0 : 2 }).format(value);
 
@@ -163,11 +158,20 @@ function SectionTitle({number,title}:{number:string;title:string}) { return <div
 function Field({label,value,onChange,type="text"}:{label:string;value:string;onChange:(v:string)=>void;type?:string}) { return <div><Label>{label}</Label><Input className="mt-2" type={type} value={value} onChange={(e)=>onChange(e.target.value)} /></div> }
 function SummaryRow({label,value}:{label:string;value:string}) { return <div className="flex justify-between border-b border-border py-3 text-xs"><span className="text-muted-foreground">{label}</span><strong>{value}</strong></div> }
 
-const QuoteDocument = forwardRef<HTMLDivElement, {client:{name:string;company:string;phone:string;address:string};title:string;items:Item[];currency:string;subtotal:number;discount:number;total:number;deposit:number;converted:number}>(({client,title,items,currency,subtotal,discount,total,deposit,converted},ref) => <div ref={ref} className="print-document w-[148mm] min-h-[210mm] bg-document p-[11mm] text-foreground shadow-2xl">
+const QuoteDocument = forwardRef<HTMLDivElement, {client:{name:string;company:string;phone:string;address:string};title:string;items:Item[];currency:string;subtotal:number;discount:number;total:number;deposit:number;converted:number}>(({client,title,items,currency,subtotal,discount,total,deposit,converted},ref) => <div ref={ref} className="print-document w-[148mm] min-h-[210mm] bg-document p-[11mm] text-foreground shadow-2xl relative">
+  {/* Watermark Logo */}
+  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 overflow-hidden rounded-lg">
+    <img src="/B.A.B.C LOGO.png" alt="watermark" className="size-96 object-contain" />
+  </div>
+  
+  {/* Content */}
+  <div className="relative z-10">
   <header className="flex justify-between border-b-2 border-primary pb-5"><BrandMark/><div className="text-right"><p className="font-brand text-2xl font-bold text-primary">QUOTATION</p><p className="mt-1 text-xs font-bold">BABC-Q-0029</p><p className="mt-1 text-[9px] text-muted-foreground">11 Sep 2026 · Valid until 25 Sep 2026</p></div></header>
   <div className="mt-5 grid grid-cols-2 gap-6"><div><p className="text-[8px] font-bold uppercase text-highlight">Prepared for</p><p className="mt-2 text-sm font-bold">{client.name}</p><p className="text-[9px] text-muted-foreground">{client.company}<br/>{client.phone}<br/>{client.address}</p></div><div className="text-right"><p className="text-[8px] font-bold uppercase text-highlight">Project</p><p className="mt-2 text-xs font-bold">{title}</p></div></div>
   <table className="mt-6 w-full text-left"><thead className="bg-primary text-primary-foreground"><tr className="text-[8px] uppercase"><th className="p-2">Description</th><th className="p-2 text-center">Qty</th><th className="p-2 text-right">Rate</th><th className="p-2 text-right">Amount</th></tr></thead><tbody>{items.map(i=><tr key={i.id} className="border-b border-border text-[9px]"><td className="p-2 font-semibold">{i.description}</td><td className="p-2 text-center">{i.quantity}</td><td className="p-2 text-right">{money(i.rate,currency)}</td><td className="p-2 text-right font-bold">{money(i.rate*i.quantity,currency)}</td></tr>)}</tbody></table>
   <div className="mt-5 ml-auto w-56"><SummaryRow label="Subtotal" value={money(subtotal,currency)}/><SummaryRow label="Discount" value={`− ${money(discount,currency)}`}/><div className="mt-2 bg-primary p-3 text-primary-foreground"><div className="flex items-end justify-between"><span className="text-[8px] font-bold uppercase">Grand total</span><strong className="text-base">{money(total,currency)}</strong></div><p className="mt-1 text-right text-[8px] opacity-80">{money(converted,currency === "NGN" ? "USD" : "NGN")}</p></div><SummaryRow label="Deposit required" value={money(deposit,currency)}/><SummaryRow label="Outstanding" value={money(total-deposit,currency)}/></div>
   <div className="mt-6 grid grid-cols-2 gap-5 border-t border-border pt-4 text-[8px]"><div><p className="font-bold uppercase text-primary">NGN Payment · UBA</p><p className="mt-1">BIG WIG ARCHITECTURE AND BUILDING CONSTRUCTION<br/><b>1031019964</b></p></div><div><p className="font-bold uppercase text-primary">USD Payment · UBA</p><p className="mt-1">Kwamu Hilary Ifechukwudere · <b>2380556018</b><br/>SWIFT UNAFNGLA · Sort 033250380</p></div></div>
   <div className="mt-6 flex items-end justify-between"><div className="max-w-[65%] text-[7px] leading-relaxed text-muted-foreground">No. 5 Benbella Street, Umuchima Uli, Anambra State<br/>+234 906 788 3721 · destinybigwig@gmail.com · RC 7051820<br/>babcofficialsite.vercel.app</div><div className="text-center"><div className="mb-1 h-px w-28 bg-foreground"/><p className="text-[8px] font-bold">Engr. K.I Hillary</p><p className="text-[7px] text-muted-foreground">Authorized Signatory</p></div></div>
+  </div>
+  </div>
 </div>);
