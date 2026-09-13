@@ -1283,20 +1283,18 @@ const QuoteDocument = forwardRef<
             <div className="rounded-[3px] border border-[#f4a300] bg-[#eef4ff] p-3">
               <div className="flex items-start gap-2.5">
                 <div className="h-12 w-[2px] bg-[#f4a300]" />
-                <div className="min-w-0">
-                  <p className="text-[7px] font-bold uppercase tracking-[0.14em] text-[#0b3d9a]">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[7px] font-bold uppercase tracking-[0.14em] text-[#0b3d9a] leading-none">
                     Prepared for
                   </p>
-                  <p className="mt-1 text-[16px] font-black leading-none text-[#0b3d9a]">
+                  <p className="mt-1 text-[16px] font-black leading-[1.05] tracking-[-0.03em] text-[#0b3d9a] break-words">
                     {client.name || "Client name"}
                   </p>
-                  <p className="mt-1 text-[7px] leading-[1.5] text-[#4b5563]">
-                    {client.company || "Company name"}
-                    <br />
-                    {client.phone || "+2340000000000"}
-                    <br />
-                    {client.address || "Project address"}
-                  </p>
+                  <div className="mt-1 space-y-0.5 text-[7px] leading-[1.35] text-[#4b5563]">
+                    <p>{client.company || "Company name"}</p>
+                    <p>{client.phone || "+2340000000000"}</p>
+                    <p>{client.address || "Project address"}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1304,10 +1302,10 @@ const QuoteDocument = forwardRef<
               <div className="flex items-start gap-2.5">
                 <div className="h-12 w-[2px] bg-[#f4a300]" />
                 <div className="w-full min-w-0">
-                  <p className="text-[7px] font-bold uppercase tracking-[0.14em] text-[#0b3d9a]">
+                  <p className="text-[7px] font-bold uppercase tracking-[0.14em] text-[#0b3d9a] leading-none">
                     Project
                   </p>
-                  <p className="mt-1 text-[15px] font-black leading-none text-[#0b3d9a] truncate">
+                  <p className="mt-1 text-[15px] font-black leading-[1.05] tracking-[-0.02em] text-[#0b3d9a] break-words">
                     {title || "Construction quotation"}
                   </p>
                 </div>
@@ -1391,9 +1389,14 @@ const QuoteDocument = forwardRef<
                   Equivalent: {money(converted, currency === "NGN" ? "USD" : "NGN")}
                 </div>
               </div>
-              <div className="flex justify-between border-b border-[#d7d2c7] py-1 text-[9px] text-[#4b5563]">
-                <span>Deposit (50%)</span>
-                <strong className="text-[#1f2937]">{money(deposit, currency)}</strong>
+              <div className="pt-1 text-[9px] text-[#4b5563]">
+                <div className="flex items-center justify-between gap-2 border-b border-[#d7d2c7] pb-1">
+                  <span className="whitespace-nowrap">Deposit</span>
+                  <span className="font-bold text-[#1f2937]">{money(deposit, currency)}</span>
+                </div>
+                <div className="mt-1 text-center text-[8px] font-bold tracking-[0.12em] text-[#0b3d9a]">
+                  (50%)
+                </div>
               </div>
               <div className="flex justify-between py-1 text-[9px] text-[#4b5563]">
                 <span>Outstanding</span>
