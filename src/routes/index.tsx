@@ -84,6 +84,23 @@ const DEFAULT_WHATSAPP = "+2349067883721";
 const QUOTATION_TEMPLATE_NOTE =
   "This quotation is valid for 14 days. Work commences upon receipt of the required deposit. Variations will be quoted separately.";
 
+const waitForImagesToLoad = async (node: HTMLElement) => {
+  const images = Array.from(node.querySelectorAll("img"));
+  await Promise.all(
+    images.map(
+      (image) =>
+        new Promise<void>((resolve) => {
+          if (image.complete) {
+            resolve();
+            return;
+          }
+          image.onload = () => resolve();
+          image.onerror = () => resolve();
+        }),
+    ),
+  );
+};
+
 // Load quotations from storage
 function getStoredQuotationsForDisplay() {
   const quotations = getSavedQuotations();
@@ -378,6 +395,7 @@ function QuotationApp() {
   const notify = (message: string) => setNotice(message);
   const exportJpeg = async () => {
     if (!documentRef.current) return;
+    await waitForImagesToLoad(documentRef.current);
     const data = await toJpeg(documentRef.current, {
       quality: 0.96,
       pixelRatio: 2,
@@ -391,6 +409,7 @@ function QuotationApp() {
   };
   const exportPdf = async () => {
     if (!documentRef.current) return;
+    await waitForImagesToLoad(documentRef.current);
     const data = await toJpeg(documentRef.current, {
       quality: 0.98,
       pixelRatio: 2,
@@ -1212,18 +1231,28 @@ const QuoteDocument = forwardRef<
     return (
       <div
         ref={ref}
-        className="print-document relative w-[148mm] min-h-[210mm] bg-[#f8f3eb] p-[10.5mm] text-[#1d1d1d] shadow-2xl"
+        className="print-document relative w-[148mm] min-h-[210mm] bg-white p-[10.5mm] text-[#1d1d1d] shadow-2xl"
       >
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden opacity-[0.07]">
-          <img src="/B.A.B.C LOGO.png" alt="watermark" className="size-[220px] object-contain" />
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden opacity-[0.06]">
+          <img
+            src="/B.A.B.C LOGO.png"
+            alt="watermark"
+            className="size-[220px] object-contain"
+            crossOrigin="anonymous"
+          />
         </div>
 
         <div className="relative z-10">
-          <header className="flex items-start justify-between border-b-[2px] border-[#c7a55d] pb-2.5">
+          <header className="flex items-start justify-between border-b-[2px] border-[#f4a300] pb-2.5">
             <div className="flex items-center gap-3">
-              <img src="/B.A.B.C LOGO.png" alt="B.A.B.C logo" className="h-[52px] w-[52px] object-contain" />
+              <img
+                src="/B.A.B.C LOGO.png"
+                alt="B.A.B.C logo"
+                className="h-[52px] w-[52px] object-contain"
+                crossOrigin="anonymous"
+              />
               <div className="pt-1">
-                <p className="font-[Georgia] text-[9px] font-bold uppercase tracking-[0.18em] text-[#0f172a] leading-tight">
+                <p className="font-[Georgia] text-[9px] font-bold uppercase tracking-[0.18em] text-[#0b3d9a] leading-tight">
                   BIG-WIG ARCHITECTURE AND BUILDING CONSTRUCTION COMPANY
                 </p>
                 <p className="mt-1 text-[7px] text-[#4b5563]">
@@ -1232,17 +1261,17 @@ const QuoteDocument = forwardRef<
               </div>
             </div>
             <div className="pt-1 text-right text-[7px] leading-[1.5] text-[#4b5563]">
-              <p className="font-bold text-[#1f2937]">+2349067883721 | destinybigwig@gmail.com</p>
+              <p className="font-bold text-[#0b3d9a]">+2349067883721 | destinybigwig@gmail.com</p>
               <p>https://babcofficialsite.vercel.app</p>
             </div>
           </header>
 
           <div className="mt-4 flex items-start justify-between gap-4 border-b border-[#d7d2c7] pb-2.5">
             <div className="space-y-1">
-              <p className="text-[7px] font-bold uppercase tracking-[0.18em] text-[#4b5563]">
+              <p className="text-[7px] font-bold uppercase tracking-[0.18em] text-[#0b3d9a]">
                 Formal document
               </p>
-              <p className="text-[24px] font-black leading-none text-[#101827]">QUOTATION</p>
+              <p className="text-[24px] font-black leading-none text-[#0b3d9a]">QUOTATION</p>
             </div>
             <div className="pt-1 text-right text-[7px] leading-[1.5] text-[#4b5563]">
               <p>Issued: 07 Sept 2026</p>
@@ -1251,14 +1280,14 @@ const QuoteDocument = forwardRef<
           </div>
 
           <div className="mt-4 grid grid-cols-[1.2fr_1fr] gap-3">
-            <div className="rounded-[3px] border border-[#d6c8a4] bg-[#f1ebdf] p-3">
+            <div className="rounded-[3px] border border-[#f4a300] bg-[#eef4ff] p-3">
               <div className="flex items-start gap-2.5">
-                <div className="h-12 w-[2px] bg-[#c7a55d]" />
+                <div className="h-12 w-[2px] bg-[#f4a300]" />
                 <div className="min-w-0">
-                  <p className="text-[7px] font-bold uppercase tracking-[0.14em] text-[#4b5563]">
+                  <p className="text-[7px] font-bold uppercase tracking-[0.14em] text-[#0b3d9a]">
                     Prepared for
                   </p>
-                  <p className="mt-1 text-[16px] font-black leading-none text-[#0f172a]">
+                  <p className="mt-1 text-[16px] font-black leading-none text-[#0b3d9a]">
                     {client.name || "Client name"}
                   </p>
                   <p className="mt-1 text-[7px] leading-[1.5] text-[#4b5563]">
@@ -1271,14 +1300,14 @@ const QuoteDocument = forwardRef<
                 </div>
               </div>
             </div>
-            <div className="rounded-[3px] border border-[#d7d2c7] bg-[#f5f5f4] p-3">
+            <div className="rounded-[3px] border border-[#d7d2c7] bg-[#f8fafc] p-3">
               <div className="flex items-start gap-2.5">
-                <div className="h-12 w-[2px] bg-[#c7a55d]" />
+                <div className="h-12 w-[2px] bg-[#f4a300]" />
                 <div className="w-full min-w-0">
-                  <p className="text-[7px] font-bold uppercase tracking-[0.14em] text-[#4b5563]">
+                  <p className="text-[7px] font-bold uppercase tracking-[0.14em] text-[#0b3d9a]">
                     Project
                   </p>
-                  <p className="mt-1 text-[15px] font-black leading-none text-[#0f172a] truncate">
+                  <p className="mt-1 text-[15px] font-black leading-none text-[#0b3d9a] truncate">
                     {title || "Construction quotation"}
                   </p>
                 </div>
@@ -1286,9 +1315,9 @@ const QuoteDocument = forwardRef<
             </div>
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-[3px] border border-[#1f2937]">
+          <div className="mt-4 overflow-hidden rounded-[3px] border border-[#0b3d9a]">
             <table className="w-full border-collapse text-left">
-              <thead className="bg-[#0f172a] text-[#f8fafc]">
+              <thead className="bg-[#0b3d9a] text-[#ffffff]">
                 <tr className="text-[7px] uppercase tracking-[0.12em]">
                   <th className="p-2 font-bold">#</th>
                   <th className="p-2 font-bold">Description</th>
@@ -1301,14 +1330,14 @@ const QuoteDocument = forwardRef<
                 {items.length > 0 ? (
                   items.map((i, idx) => (
                     <tr key={i.id} className="border-t border-[#dfe3e8] bg-white text-[9px]">
-                      <td className="p-2 font-bold text-[#0f172a]">{String(idx + 1).padStart(2, "0")}</td>
+                      <td className="p-2 font-bold text-[#0b3d9a]">{String(idx + 1).padStart(2, "0")}</td>
                       <td className="p-2">
-                        <div className="font-bold text-[#0f172a]">{i.description || "Untitled item"}</div>
+                        <div className="font-bold text-[#0b3d9a]">{i.description || "Untitled item"}</div>
                         <div className="mt-0.5 text-[7px] text-[#64748b]">{i.unit || "lump sum"}</div>
                       </td>
-                      <td className="p-2 text-center">{money(i.rate, currency)}</td>
-                      <td className="p-2 text-center">{i.quantity}</td>
-                      <td className="p-2 text-right font-bold text-[#0f172a]">
+                      <td className="p-2 text-center text-[#0b3d9a]">{money(i.rate, currency)}</td>
+                      <td className="p-2 text-center text-[#0b3d9a]">{i.quantity}</td>
+                      <td className="p-2 text-right font-bold text-[#0b3d9a]">
                         {money(i.rate * i.quantity, currency)}
                       </td>
                     </tr>
@@ -1326,7 +1355,7 @@ const QuoteDocument = forwardRef<
 
           <div className="mt-4 grid grid-cols-[1.15fr_0.85fr] gap-4">
             <div className="space-y-3">
-              <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#4b5563]">
+              <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#0b3d9a]">
                 Payment details
               </p>
               <div className="text-[9px] leading-[1.55] text-[#1f2937]">
@@ -1353,7 +1382,7 @@ const QuoteDocument = forwardRef<
                 <span>Discount</span>
                 <strong className="text-[#1f2937]">- {money(effectiveDiscount, currency)}</strong>
               </div>
-              <div className="bg-[#0f172a] p-2.5 text-[#f8fafc]">
+              <div className="bg-[#0b3d9a] p-2.5 text-[#ffffff]">
                 <div className="flex items-center justify-between text-[8px] font-bold uppercase tracking-[0.12em]">
                   <span>Grand total</span>
                   <span>{money(total, currency)}</span>
@@ -1373,8 +1402,8 @@ const QuoteDocument = forwardRef<
             </div>
           </div>
 
-          <div className="mt-4 rounded-[3px] border border-dashed border-[#c7a55d] bg-[#faf5eb] p-2.5 text-[7px] leading-[1.5] text-[#374151]">
-            <p className="mb-1 text-[7px] font-bold uppercase tracking-[0.16em] text-[#4b5563]">
+          <div className="mt-4 rounded-[3px] border border-dashed border-[#f4a300] bg-[#fff8ee] p-2.5 text-[7px] leading-[1.5] text-[#374151]">
+            <p className="mb-1 text-[7px] font-bold uppercase tracking-[0.16em] text-[#0b3d9a]">
               Terms & conditions
             </p>
             <div className="grid grid-cols-2 gap-x-4 gap-y-1">
@@ -1389,7 +1418,7 @@ const QuoteDocument = forwardRef<
 
           <div className="mt-5 flex items-end justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-[#0f172a]">Engr. K.I Hillary</p>
+              <p className="text-[10px] font-bold text-[#0b3d9a]">Engr. K.I Hillary</p>
               <p className="text-[8px] text-[#4b5563]">Authorized Signatory</p>
             </div>
 
@@ -1397,11 +1426,11 @@ const QuoteDocument = forwardRef<
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&margin=1&data=${encodeURIComponent(whatsappLink)}`}
                 alt="WhatsApp QR code"
-                className="h-[56px] w-[56px] rounded-[3px] border border-[#c7a55d] bg-white p-1"
+                className="h-[56px] w-[56px] rounded-[3px] border border-[#f4a300] bg-white p-1"
               />
               <div className="text-right text-[7px] leading-[1.5] text-[#4b5563]">
                 <p>Scan to chat on WhatsApp</p>
-                <p className="mt-0.5 font-bold text-[#0f172a]">
+                <p className="mt-0.5 font-bold text-[#0b3d9a]">
                   FROM VISION TO LEGACY | +2349067883721
                 </p>
               </div>
