@@ -25,6 +25,7 @@ export interface StoredQuotation {
   items: StoredItem[];
   currency: string;
   discount: number;
+  discountType?: "fixed" | "percentage";
   depositPct: number;
   exchangeRate: number;
   subtotal: number;

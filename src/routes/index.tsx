@@ -80,6 +80,9 @@ const services = [
   "Electrical and plumbing installation",
   "Finishes and handover",
 ];
+const DEFAULT_WHATSAPP = "+2349067883721";
+const QUOTATION_TEMPLATE_NOTE =
+  "This quotation is valid for 14 days. Work commences upon receipt of the required deposit. Variations will be quoted separately.";
 
 // Load quotations from storage
 function getStoredQuotationsForDisplay() {
@@ -194,6 +197,7 @@ function QuotationApp() {
   const [client, setClient] = useState({ name: "", company: "", phone: "", address: "" });
   const [title, setTitle] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [discountType, setDiscountType] = useState<"fixed" | "percentage">("percentage");
   const [depositPct, setDepositPct] = useState(40);
   const [exchangeRate, setExchangeRate] = useState(1600);
   const [items, setItems] = useState<Item[]>([]);
@@ -203,7 +207,13 @@ function QuotationApp() {
     () => items.reduce((sum, item) => sum + item.quantity * item.rate, 0),
     [items],
   );
-  const total = Math.max(0, subtotal - discount);
+  const appliedDiscount = useMemo(() => {
+    if (discountType === "percentage") {
+      return Math.max(0, subtotal * (discount / 100));
+    }
+    return Math.max(0, discount);
+  }, [discount, discountType, subtotal]);
+  const total = Math.max(0, subtotal - appliedDiscount);
   const deposit = total * (depositPct / 100);
   const converted = currency === "NGN" ? total / exchangeRate : total * exchangeRate;
 
@@ -249,6 +259,7 @@ function QuotationApp() {
         items,
         currency,
         discount,
+        discountType,
         depositPct,
         exchangeRate,
         subtotal,
@@ -274,6 +285,7 @@ function QuotationApp() {
     items,
     currency,
     discount,
+    discountType,
     depositPct,
     exchangeRate,
     subtotal,
@@ -298,6 +310,7 @@ function QuotationApp() {
       items,
       currency,
       discount,
+      discountType,
       depositPct,
       exchangeRate,
       subtotal,
@@ -329,6 +342,7 @@ function QuotationApp() {
     setItems([]);
     setCurrency("NGN");
     setDiscount(0);
+    setDiscountType("percentage");
     setEditorOpen(true);
     notify("New quotation created");
   };
@@ -338,7 +352,8 @@ function QuotationApp() {
     setClient(quotation.client);
     setItems(quotation.items);
     setCurrency(quotation.currency);
-    setDiscount(quotation.discount);
+    setDiscount(quotation.discount ?? 0);
+    setDiscountType(quotation.discountType ?? "percentage");
     setDepositPct(quotation.depositPct);
     setExchangeRate(quotation.exchangeRate);
     setEditorOpen(true);
@@ -387,11 +402,12 @@ function QuotationApp() {
     notify("A5 PDF downloaded");
   };
   const shareWhatsApp = () => {
+    const whatsappNumber = (client.phone || DEFAULT_WHATSAPP).replace(/\D/g, "");
     const text = encodeURIComponent(
-      `Hello ${client.name}, your B.A.B.C quotation BABC-Q-0029 for ${title} is ready. Total: ${money(total, currency)}.`,
+      `Hello ${client.name || "there"}, your B.A.B.C quotation ${currentQuotationId || "BABC-Q-0029"} for ${title || "your project"} is ready. Total: ${money(total, currency)}.`,
     );
     window.open(
-      `https://wa.me/${client.phone.replace(/\D/g, "")}?text=${text}`,
+      `https://wa.me/${whatsappNumber}?text=${text}`,
       "_blank",
       "noopener,noreferrer",
     );
@@ -477,16 +493,30 @@ function QuotationApp() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="transition-smooth hover:bg-accent"
+            <button
+              type="button"
               aria-label="Toggle theme"
-              onClick={() => setIsDarkMode((value) => !value)}
               title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+              onClick={() => setIsDarkMode((value) => !value)}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-semibold transition-smooth",
+                isDarkMode
+                  ? "border-border bg-card text-foreground shadow-sm"
+                  : "border-primary/20 bg-primary/5 text-primary shadow-sm",
+              )}
             >
-              {isDarkMode ? <Sun className="size-4" /> : <Moon className="size-4" />}
-            </Button>
+              <span
+                className={cn(
+                  "flex size-6 items-center justify-center rounded-full border",
+                  isDarkMode
+                    ? "border-amber-300 bg-amber-100 text-amber-700"
+                    : "border-slate-200 bg-slate-900 text-slate-100",
+                )}
+              >
+                {isDarkMode ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
+              </span>
+              <span>{isDarkMode ? "Night" : "Day"}</span>
+            </button>
             <Button
               variant="ghost"
               size="icon"
@@ -673,8 +703,27 @@ function QuotationApp() {
                     type="number"
                     onChange={(v) => setExchangeRate(Number(v))}
                   />
+                  <div className="space-y-2">
+                    <Label>Discount type</Label>
+                    <Select
+                      value={discountType}
+                      onValueChange={(value) => setDiscountType(value as "fixed" | "percentage")}
+                    >
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fixed">Fixed value</SelectItem>
+                        <SelectItem value="percentage">Percentage</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Field
-                    label={`Discount (${currency})`}
+                    label={
+                      discountType === "percentage"
+                        ? "Discount (%)"
+                        : `Discount (${currency})`
+                    }
                     value={String(discount)}
                     type="number"
                     onChange={(v) => setDiscount(Number(v))}
@@ -687,7 +736,10 @@ function QuotationApp() {
                   />
                   <div className="border-t border-border pt-5">
                     <SummaryRow label="Subtotal" value={money(subtotal, currency)} />
-                    <SummaryRow label="Discount" value={`− ${money(discount, currency)}`} />
+                    <SummaryRow
+                      label="Discount"
+                      value={`− ${money(appliedDiscount, currency)}`}
+                    />
                     <div className="mt-4 bg-primary p-4 text-primary-foreground">
                       <p className="text-xs font-semibold opacity-70">Grand total</p>
                       <p className="mt-1 text-xl font-bold">{money(total, currency)}</p>
@@ -1140,116 +1192,223 @@ const QuoteDocument = forwardRef<
     currency: string;
     subtotal: number;
     discount: number;
+    discountType: "fixed" | "percentage";
     total: number;
     deposit: number;
     converted: number;
   }
->(({ client, title, items, currency, subtotal, discount, total, deposit, converted }, ref) => (
-  <div
-    ref={ref}
-    className="print-document w-[148mm] min-h-[210mm] bg-document p-[11mm] text-foreground shadow-2xl relative"
-  >
-    {/* Watermark Logo - centered behind all content */}
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 overflow-hidden">
-      <img src="/B.A.B.C LOGO.png" alt="watermark" className="size-96 object-contain" />
-    </div>
+>(
+  (
+    { client, title, items, currency, subtotal, discount, discountType, total, deposit, converted },
+    ref,
+  ) => {
+    const effectiveDiscount =
+      discountType === "percentage" ? Math.max(0, subtotal * (discount / 100)) : Math.max(0, discount);
+    const whatsappNumber = (client.phone || DEFAULT_WHATSAPP).replace(/\D/g, "");
+    const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+      `Hello ${client.name || "there"}, I would like to discuss your quotation for ${title || "the project"}.`,
+    )}`;
 
-    {/* All content with z-index to appear above watermark */}
-    <div className="relative z-10 space-y-5">
-      <header className="flex justify-between border-b-2 border-primary pb-5">
-        <BrandMark />
-        <div className="text-right">
-          <p className="font-brand text-2xl font-bold text-primary">QUOTATION</p>
-          <p className="mt-1 text-xs font-bold">BABC-Q-0029</p>
-          <p className="mt-1 text-[9px] text-muted-foreground">
-            11 Sep 2026 · Valid until 25 Sep 2026
-          </p>
+    return (
+      <div
+        ref={ref}
+        className="print-document relative w-[148mm] min-h-[210mm] bg-[#f8f3eb] p-[10.5mm] text-[#1d1d1d] shadow-2xl"
+      >
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden opacity-[0.07]">
+          <img src="/B.A.B.C LOGO.png" alt="watermark" className="size-[220px] object-contain" />
         </div>
-      </header>
-      <div className="grid grid-cols-2 gap-6">
-        <div>
-          <p className="text-[8px] font-bold uppercase text-highlight">Prepared for</p>
-          <p className="mt-2 text-sm font-bold">{client.name}</p>
-          <p className="text-[9px] text-muted-foreground">
-            {client.company}
-            <br />
-            {client.phone}
-            <br />
-            {client.address}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-[8px] font-bold uppercase text-highlight">Project</p>
-          <p className="mt-2 text-xs font-bold">{title}</p>
-        </div>
-      </div>
-      <table className="w-full text-left">
-        <thead className="bg-primary text-primary-foreground">
-          <tr className="text-[8px] uppercase">
-            <th className="p-2">Description</th>
-            <th className="p-2 text-center">Qty</th>
-            <th className="p-2 text-right">Rate</th>
-            <th className="p-2 text-right">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((i) => (
-            <tr key={i.id} className="border-b border-border text-[9px]">
-              <td className="p-2 font-semibold">{i.description}</td>
-              <td className="p-2 text-center">{i.quantity}</td>
-              <td className="p-2 text-right">{money(i.rate, currency)}</td>
-              <td className="p-2 text-right font-bold">{money(i.rate * i.quantity, currency)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="ml-auto w-56">
-        <SummaryRow label="Subtotal" value={money(subtotal, currency)} />
-        <SummaryRow label="Discount" value={`− ${money(discount, currency)}`} />
-        <div className="mt-2 bg-primary p-3 text-primary-foreground">
-          <div className="flex items-end justify-between">
-            <span className="text-[8px] font-bold uppercase">Grand total</span>
-            <strong className="text-base">{money(total, currency)}</strong>
+
+        <div className="relative z-10">
+          <header className="flex items-start justify-between border-b-[2px] border-[#c7a55d] pb-2.5">
+            <div className="flex items-center gap-3">
+              <img src="/B.A.B.C LOGO.png" alt="B.A.B.C logo" className="h-[52px] w-[52px] object-contain" />
+              <div className="pt-1">
+                <p className="font-[Georgia] text-[9px] font-bold uppercase tracking-[0.18em] text-[#0f172a] leading-tight">
+                  BIG-WIG ARCHITECTURE AND BUILDING CONSTRUCTION COMPANY
+                </p>
+                <p className="mt-1 text-[7px] text-[#4b5563]">
+                  No. 5 Benbella Street, Umuchima Uli, Anambra State.
+                </p>
+              </div>
+            </div>
+            <div className="pt-1 text-right text-[7px] leading-[1.5] text-[#4b5563]">
+              <p className="font-bold text-[#1f2937]">+2349067883721 | destinybigwig@gmail.com</p>
+              <p>https://babcofficialsite.vercel.app</p>
+            </div>
+          </header>
+
+          <div className="mt-4 flex items-start justify-between gap-4 border-b border-[#d7d2c7] pb-2.5">
+            <div className="space-y-1">
+              <p className="text-[7px] font-bold uppercase tracking-[0.18em] text-[#4b5563]">
+                Formal document
+              </p>
+              <p className="text-[24px] font-black leading-none text-[#101827]">QUOTATION</p>
+            </div>
+            <div className="pt-1 text-right text-[7px] leading-[1.5] text-[#4b5563]">
+              <p>Issued: 07 Sept 2026</p>
+              <p>Valid until: 22 Sept 2026</p>
+            </div>
           </div>
-          <p className="mt-1 text-right text-[8px] opacity-80">
-            {money(converted, currency === "NGN" ? "USD" : "NGN")}
-          </p>
+
+          <div className="mt-4 grid grid-cols-[1.2fr_1fr] gap-3">
+            <div className="rounded-[3px] border border-[#d6c8a4] bg-[#f1ebdf] p-3">
+              <div className="flex items-start gap-2.5">
+                <div className="h-12 w-[2px] bg-[#c7a55d]" />
+                <div className="min-w-0">
+                  <p className="text-[7px] font-bold uppercase tracking-[0.14em] text-[#4b5563]">
+                    Prepared for
+                  </p>
+                  <p className="mt-1 text-[16px] font-black leading-none text-[#0f172a]">
+                    {client.name || "Client name"}
+                  </p>
+                  <p className="mt-1 text-[7px] leading-[1.5] text-[#4b5563]">
+                    {client.company || "Company name"}
+                    <br />
+                    {client.phone || "+2340000000000"}
+                    <br />
+                    {client.address || "Project address"}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-[3px] border border-[#d7d2c7] bg-[#f5f5f4] p-3">
+              <div className="flex items-start gap-2.5">
+                <div className="h-12 w-[2px] bg-[#c7a55d]" />
+                <div className="w-full min-w-0">
+                  <p className="text-[7px] font-bold uppercase tracking-[0.14em] text-[#4b5563]">
+                    Project
+                  </p>
+                  <p className="mt-1 text-[15px] font-black leading-none text-[#0f172a] truncate">
+                    {title || "Construction quotation"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 overflow-hidden rounded-[3px] border border-[#1f2937]">
+            <table className="w-full border-collapse text-left">
+              <thead className="bg-[#0f172a] text-[#f8fafc]">
+                <tr className="text-[7px] uppercase tracking-[0.12em]">
+                  <th className="p-2 font-bold">#</th>
+                  <th className="p-2 font-bold">Description</th>
+                  <th className="p-2 text-center font-bold">Unit price</th>
+                  <th className="p-2 text-center font-bold">Qty</th>
+                  <th className="p-2 text-right font-bold">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.length > 0 ? (
+                  items.map((i, idx) => (
+                    <tr key={i.id} className="border-t border-[#dfe3e8] bg-white text-[9px]">
+                      <td className="p-2 font-bold text-[#0f172a]">{String(idx + 1).padStart(2, "0")}</td>
+                      <td className="p-2">
+                        <div className="font-bold text-[#0f172a]">{i.description || "Untitled item"}</div>
+                        <div className="mt-0.5 text-[7px] text-[#64748b]">{i.unit || "lump sum"}</div>
+                      </td>
+                      <td className="p-2 text-center">{money(i.rate, currency)}</td>
+                      <td className="p-2 text-center">{i.quantity}</td>
+                      <td className="p-2 text-right font-bold text-[#0f172a]">
+                        {money(i.rate * i.quantity, currency)}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="bg-white p-6 text-center text-[10px] text-[#64748b]">
+                      No items added yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4 grid grid-cols-[1.15fr_0.85fr] gap-4">
+            <div className="space-y-3">
+              <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#4b5563]">
+                Payment details
+              </p>
+              <div className="text-[9px] leading-[1.55] text-[#1f2937]">
+                <p className="font-bold">Naira Payments (NGN)</p>
+                <p className="mt-1">BIG WIG ARCHITECTURE AND BUILDING CONSTRUCTION</p>
+                <p>UBA · 1031019964</p>
+              </div>
+              <div className="mt-3 text-[9px] leading-[1.55] text-[#1f2937]">
+                <p className="font-bold">Dollar Payments (USD)</p>
+                <p className="mt-1">Kwamu Hilary Ifechukwudere</p>
+                <p>UBA · 2380556018</p>
+                <p>SWIFT CODE: UNAFNGLA</p>
+                <p>Sort Code: 033250380</p>
+              </div>
+              <p className="text-[8px] text-[#4b5563]">Amount in words: zero naira</p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between border-b border-[#d7d2c7] py-1 text-[9px] text-[#4b5563]">
+                <span>Subtotal</span>
+                <strong className="text-[#1f2937]">{money(subtotal, currency)}</strong>
+              </div>
+              <div className="flex justify-between border-b border-[#d7d2c7] py-1 text-[9px] text-[#4b5563]">
+                <span>Discount</span>
+                <strong className="text-[#1f2937]">- {money(effectiveDiscount, currency)}</strong>
+              </div>
+              <div className="bg-[#0f172a] p-2.5 text-[#f8fafc]">
+                <div className="flex items-center justify-between text-[8px] font-bold uppercase tracking-[0.12em]">
+                  <span>Grand total</span>
+                  <span>{money(total, currency)}</span>
+                </div>
+                <div className="mt-1 text-right text-[8px] text-[#dbeafe]">
+                  Equivalent: {money(converted, currency === "NGN" ? "USD" : "NGN")}
+                </div>
+              </div>
+              <div className="flex justify-between border-b border-[#d7d2c7] py-1 text-[9px] text-[#4b5563]">
+                <span>Deposit (50%)</span>
+                <strong className="text-[#1f2937]">{money(deposit, currency)}</strong>
+              </div>
+              <div className="flex justify-between py-1 text-[9px] text-[#4b5563]">
+                <span>Outstanding</span>
+                <strong className="text-[#1f2937]">{money(total - deposit, currency)}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-[3px] border border-dashed border-[#c7a55d] bg-[#faf5eb] p-2.5 text-[7px] leading-[1.5] text-[#374151]">
+            <p className="mb-1 text-[7px] font-bold uppercase tracking-[0.16em] text-[#4b5563]">
+              Terms & conditions
+            </p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+              <div>1. Prices cover only the listed scope of work.</div>
+              <div>2. Changes require written approval and may change the cost.</div>
+              <div>3. A deposit is required before work begins.</div>
+              <div>4. Payment follows the currency shown on this document.</div>
+              <div>5. The client will provide access, approvals, and accurate details.</div>
+              <div>6. Disputes should first be resolved amicably under Nigerian law.</div>
+            </div>
+          </div>
+
+          <div className="mt-5 flex items-end justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-[#0f172a]">Engr. K.I Hillary</p>
+              <p className="text-[8px] text-[#4b5563]">Authorized Signatory</p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&margin=1&data=${encodeURIComponent(whatsappLink)}`}
+                alt="WhatsApp QR code"
+                className="h-[56px] w-[56px] rounded-[3px] border border-[#c7a55d] bg-white p-1"
+              />
+              <div className="text-right text-[7px] leading-[1.5] text-[#4b5563]">
+                <p>Scan to chat on WhatsApp</p>
+                <p className="mt-0.5 font-bold text-[#0f172a]">
+                  FROM VISION TO LEGACY | +2349067883721
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-        <SummaryRow label="Deposit required" value={money(deposit, currency)} />
-        <SummaryRow label="Outstanding" value={money(total - deposit, currency)} />
       </div>
-      <div className="grid grid-cols-2 gap-5 border-t border-border pt-4 text-[8px]">
-        <div>
-          <p className="font-bold uppercase text-primary">NGN Payment · UBA</p>
-          <p className="mt-1">
-            BIG WIG ARCHITECTURE AND BUILDING CONSTRUCTION
-            <br />
-            <b>1031019964</b>
-          </p>
-        </div>
-        <div>
-          <p className="font-bold uppercase text-primary">USD Payment · UBA</p>
-          <p className="mt-1">
-            Kwamu Hilary Ifechukwudere · <b>2380556018</b>
-            <br />
-            SWIFT UNAFNGLA · Sort 033250380
-          </p>
-        </div>
-      </div>
-      <div className="flex items-end justify-between">
-        <div className="max-w-[65%] text-[7px] leading-relaxed text-muted-foreground">
-          No. 5 Benbella Street, Umuchima Uli, Anambra State
-          <br />
-          +234 906 788 3721 · destinybigwig@gmail.com · RC 7051820
-          <br />
-          babcofficialsite.vercel.app
-        </div>
-        <div className="text-center">
-          <div className="mb-1 h-px w-28 bg-foreground" />
-          <p className="text-[8px] font-bold">Engr. K.I Hillary</p>
-          <p className="text-[7px] text-muted-foreground">Authorized Signatory</p>
-        </div>
-      </div>
-    </div>
-  </div>
-));
+    );
+  },
+);
