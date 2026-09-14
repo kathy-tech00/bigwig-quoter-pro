@@ -81,8 +81,16 @@ const services = [
   "Finishes and handover",
 ];
 const DEFAULT_WHATSAPP = "+2349067883721";
+const DEFAULT_DEPOSIT_PCT_KEY = "babc_default_deposit_pct";
 const QUOTATION_TEMPLATE_NOTE =
   "This quotation is valid for 14 days. Work commences upon receipt of the required deposit. Variations will be quoted separately.";
+
+const getStoredNumber = (key: string, fallback: number) => {
+  if (typeof window === "undefined") return fallback;
+
+  const value = Number(window.localStorage.getItem(key));
+  return Number.isFinite(value) && value >= 0 ? value : fallback;
+};
 
 const waitForImagesToLoad = async (node: HTMLElement) => {
   const images = Array.from(node.querySelectorAll("img"));
@@ -215,7 +223,10 @@ function QuotationApp() {
   const [title, setTitle] = useState("");
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<"fixed" | "percentage">("percentage");
-  const [depositPct, setDepositPct] = useState(40);
+  const [defaultDepositPct, setDefaultDepositPct] = useState<number>(() =>
+    getStoredNumber(DEFAULT_DEPOSIT_PCT_KEY, 40),
+  );
+  const [depositPct, setDepositPct] = useState(defaultDepositPct);
   const [exchangeRate, setExchangeRate] = useState(1600);
   const [items, setItems] = useState<Item[]>([]);
   const [savedQuotations, setSavedQuotations] = useState<StoredQuotation[]>([]);
@@ -252,6 +263,10 @@ function QuotationApp() {
     setIsDarkMode(nextDark);
     document.documentElement.classList.toggle("dark", nextDark);
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(DEFAULT_DEPOSIT_PCT_KEY, String(defaultDepositPct));
+  }, [defaultDepositPct]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
@@ -360,6 +375,7 @@ function QuotationApp() {
     setCurrency("NGN");
     setDiscount(0);
     setDiscountType("percentage");
+    setDepositPct(defaultDepositPct);
     setEditorOpen(true);
     notify("New quotation created");
   };
@@ -588,6 +604,10 @@ function QuotationApp() {
           <SettingsView
             exchangeRate={exchangeRate}
             setExchangeRate={setExchangeRate}
+            depositPct={depositPct}
+            setDepositPct={setDepositPct}
+            defaultDepositPct={defaultDepositPct}
+            setDefaultDepositPct={setDefaultDepositPct}
             notify={notify}
           />
         )}
@@ -827,6 +847,7 @@ function QuotationApp() {
               discount={discount}
               total={total}
               deposit={deposit}
+              depositPct={depositPct}
               converted={converted}
             />
           </div>
@@ -1069,10 +1090,18 @@ function Clients() {
 function SettingsView({
   exchangeRate,
   setExchangeRate,
+  depositPct,
+  setDepositPct,
+  defaultDepositPct,
+  setDefaultDepositPct,
   notify,
 }: {
   exchangeRate: number;
   setExchangeRate: (n: number) => void;
+  depositPct: number;
+  setDepositPct: (n: number) => void;
+  defaultDepositPct: number;
+  setDefaultDepositPct: (n: number) => void;
   notify: (s: string) => void;
 }) {
   return (
@@ -1102,6 +1131,17 @@ function SettingsView({
               value={String(exchangeRate)}
               onChange={(v) => setExchangeRate(Number(v))}
             />
+            <Field
+              label="Default required deposit (%)"
+              type="number"
+              value={String(defaultDepositPct)}
+              onChange={(v) => {
+                const value = Number(v);
+                if (!Number.isFinite(value)) return;
+                setDefaultDepositPct(value);
+                setDepositPct(value);
+              }}
+            />
             <Field label="Default validity (days)" type="number" value="14" onChange={() => {}} />
           </div>
         </section>
@@ -1123,7 +1163,10 @@ function SettingsView({
         </section>
         <Button
           className="w-fit transition-smooth glow-primary-hover"
-          onClick={() => notify("Company settings saved")}
+          onClick={() => {
+            setDepositPct(defaultDepositPct);
+            notify("Company settings saved");
+          }}
         >
           Save settings
         </Button>
@@ -1214,11 +1257,24 @@ const QuoteDocument = forwardRef<
     discountType: "fixed" | "percentage";
     total: number;
     deposit: number;
+    depositPct: number;
     converted: number;
   }
 >(
   (
-    { client, title, items, currency, subtotal, discount, discountType, total, deposit, converted },
+    {
+      client,
+      title,
+      items,
+      currency,
+      subtotal,
+      discount,
+      discountType,
+      total,
+      deposit,
+      depositPct,
+      converted,
+    },
     ref,
   ) => {
     const effectiveDiscount =
@@ -1395,7 +1451,7 @@ const QuoteDocument = forwardRef<
                   <span className="font-bold text-[#1f2937]">{money(deposit, currency)}</span>
                 </div>
                 <div className="mt-1 text-center text-[8px] font-bold tracking-[0.12em] text-[#0b3d9a]">
-                  (50%)
+                  ({depositPct}%)
                 </div>
               </div>
               <div className="flex justify-between py-1 text-[9px] text-[#4b5563]">
